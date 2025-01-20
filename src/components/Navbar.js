@@ -1,15 +1,28 @@
 import React, { useState } from "react";
 import { Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/react";
 import { FaClipboardList } from "react-icons/fa";
-import { MdViewList, MdViewModule } from "react-icons/md";
+import { MdViewList} from "react-icons/md";
+import { CiViewBoard } from "react-icons/ci";
 import { ChevronDownIcon } from "@heroicons/react/20/solid";
+import { BiLogOut } from "react-icons/bi";
+import { BiSearch, BiX } from "react-icons/bi";
+import logo from "../assets/car1.jpg";
+
 
 const Navbar = () => {
+
+  const [searchValue, setSearchValue] = useState(""); // State for input value
+
+  const handleClear = () => {
+    setSearchValue("");
+  };
+
   const [activeView, setActiveView] = useState("List"); // State to track the active view
 
   const handleViewChange = (view) => {
     setActiveView(view);
   };
+  
 
   return (
     <nav className="bg-white shadow-md p-4 flex flex-col space-y-2">
@@ -21,11 +34,11 @@ const Navbar = () => {
         </h1>
         <div className="flex items-center space-x-3">
           <img
-            src="https://via.placeholder.com/40"
+             src={logo}
             alt="User Avatar"
             className="w-8 h-8 rounded-full"
           />
-          <span>Aravind</span>
+          <span>Knox</span>
         </div>
       </div>
 
@@ -48,25 +61,31 @@ const Navbar = () => {
             }`}
             onClick={() => handleViewChange("Board")}
           >
-            <MdViewModule className="text-xl" />
+            <CiViewBoard className="text-xl" />
             <span>Board</span>
           </button>
         </div>
 
         {/* Logout Button */}
-        <button className="text-gray-600 hover:text-red-600 font-medium">
-          Logout
-        </button>
+        <button
+  onClick={() => alert("Are you sure you want to logout?")}
+  className="flex items-center px-3 py-2 text-xs bg-red-100 text-black rounded-md border border-red-200 hover:bg-red-200 focus:ring-1 focus:ring-red-300"
+>
+  <BiLogOut className="w-3 h-3 mr-1" /> {/* Smaller Icon */}
+  Logout
+</button>
+
+
       </div>
 
       {/* Third Line */}
       <div className="flex items-center justify-between">
         {/* Filters */}
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-4 text-sm">
           {/* Category Filter */}
-          <h2>Filter by</h2>
+          <h2>Filter by :</h2>
           <Menu as="div" className="relative inline-block text-left">
-            <MenuButton className="inline-flex w-full justify-center gap-x-1.5 rounded-full bg-white px-4 py-2 text-sm font-semibold text-gray-900 ring-1 shadow-xs ring-gray-300 ring-inset hover:bg-gray-50">
+            <MenuButton className="inline-flex w-full justify-center gap-x-1.5 rounded-full bg-white px-4 py-2 text-sm  ring-1 shadow-xs ring-gray-300 ring-inset hover:bg-gray-50">
               Category
               <ChevronDownIcon aria-hidden="true" className="h-5 w-5 text-gray-400" />
             </MenuButton>
@@ -100,7 +119,7 @@ const Navbar = () => {
 
           {/* Due Date Filter */}
           <Menu as="div" className="relative inline-block text-left">
-            <MenuButton className="inline-flex w-full justify-center gap-x-1.5 rounded-full bg-white px-4 py-2 text-sm font-semibold text-gray-900 ring-1 shadow-xs ring-gray-300 ring-inset hover:bg-gray-50">
+            <MenuButton className="inline-flex w-full justify-center gap-x-1.5 rounded-full bg-white px-4 py-2 text-sm  ring-1 shadow-xs ring-gray-300 ring-inset hover:bg-gray-50">
               Due Date
               <ChevronDownIcon aria-hidden="true" className="h-5 w-5 text-gray-400" />
             </MenuButton>
@@ -137,16 +156,29 @@ const Navbar = () => {
         <div className="flex items-center space-x-4">
           {/* Search Input */}
           <div className="relative">
-            <input
-              type="text"
-              placeholder="Search"
-              className="border border-gray-300 rounded-full px-4 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-600"
-            />
-            <span className="absolute top-2.5 right-3 text-gray-400 material-icons">
-              search
-            </span>
+            <div className="relative flex items-center">
+      {/* Left Search Icon */}
+      <BiSearch className="absolute left-3 text-gray-400 w-5 h-5" />
+
+      {/* Input Field */}
+      <input
+        type="text"
+        value={searchValue}
+        onChange={(e) => setSearchValue(e.target.value)}
+        placeholder="Search"
+        className="pl-10 pr-10 border text-sm border-gray-300 rounded-full px-4 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-600"
+      />
+
+      {/* Clear (X) Icon */}
+      {searchValue && (
+        <BiX
+          className="absolute right-3 text-gray-400 w-5 h-5 cursor-pointer hover:text-gray-600"
+          onClick={handleClear}
+        />
+      )}
+    </div>
           </div>
-          <button className="px-4 py-2 bg-purple-600 text-white rounded-full hover:bg-purple-700">
+          <button className="px-4 py-2 text-sm bg-purple-600 text-white rounded-full hover:bg-purple-700">
             ADD TASK
           </button>
         </div>
