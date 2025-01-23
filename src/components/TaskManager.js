@@ -105,9 +105,9 @@ const TaskManager = () => {
 <div className="mx-auto">
   <div className="">
     {/* Column Headers */}
-    <table className="min-w-full bg-white rounded-b-lg overflow-hidden shadow-md">
+    <table className="min-w-full ">
       <thead>
-        <tr className="bg-gray-100">
+        <tr className="">
           <th className="py-2 px-4 text-left">Name</th>
           <th className="py-2 px-4 text-left">Due Date</th>
           <th className="py-2 px-4 text-left">Task Status</th>
@@ -146,13 +146,13 @@ const TaskManager = () => {
         {expandedSections[status] && (
           <>
             {/* Add task form when 'isAdding' is true + add task is top in todo under  */}
-            {status === "TO-DO" && !isAdding && expandedSections[status] && (
+            {status === "TO-DO"  && expandedSections[status] && (
           <div className="py-4 ">
             <button
               onClick={() => setIsAdding(true)}
-              className="bg-purple-500 text-white px-4 py-2 rounded"
+              className=" text-black px-4"
             >
-              + add task
+              + ADD Task
             </button>
           </div>
         )}
