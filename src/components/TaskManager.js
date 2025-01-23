@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { MdOutlineExpandMore, MdOutlineExpandLess } from "react-icons/md";
 
 const TaskManager = () => {
   const [tasks, setTasks] = useState([]);
@@ -12,12 +13,17 @@ const TaskManager = () => {
   });
   const [isAdding, setIsAdding] = useState(false);
   const [error, setError] = useState("");
+  const [expandedSections, setExpandedSections] = useState({
+    "TO-DO": true,
+    "IN-PROGRESS": true,
+    "COMPLETED": true,
+  });
 
   useEffect(() => {
     const fetchTasks = async () => {
       try {
         const token = localStorage.getItem("token");
-        if (!token) throw new Error("token not found. please log in again.");
+        if (!token) throw new Error("Token not found. Please log in again.");
 
         const response = await axios.get("http://localhost:5000/getTask", {
           headers: { Authorization: `Bearer ${token}` },
@@ -25,7 +31,7 @@ const TaskManager = () => {
 
         setTasks(response.data.data || []);
       } catch (err) {
-        setError(err.response?.data?.error || err.message || "error fetching tasks.");
+        setError(err.response?.data?.error || err.message || "Error fetching tasks.");
       }
     };
 
@@ -50,7 +56,7 @@ const TaskManager = () => {
       setNewTask({ name: "", date: "", taskStatus: "TO-DO", taskCategory: "Work" });
       setIsAdding(false);
     } catch (err) {
-      setError(err.response?.data?.error || err.message || "error adding task.");
+      setError(err.response?.data?.error || err.message || "Error adding task.");
     }
   };
 
@@ -69,7 +75,7 @@ const TaskManager = () => {
 
       setTasks(updatedTasks);
     } catch (err) {
-      setError(err.response?.data?.error || err.message || "error updating status.");
+      setError(err.response?.data?.error || err.message || "Error updating status.");
     }
   };
 
@@ -82,45 +88,137 @@ const TaskManager = () => {
 
       setTasks(tasks.filter((task) => task.id !== id));
     } catch (err) {
-      setError(err.response?.data?.error || err.message || "error deleting task.");
+      setError(err.response?.data?.error || err.message || "Error deleting task.");
     }
   };
 
   const getTasksByStatus = (status) => tasks.filter((task) => task.taskStatus === status);
 
+  const toggleSection = (status) => {
+    setExpandedSections((prev) => ({
+      ...prev,
+      [status]: !prev[status],
+    }));
+  };
+
   return (
-    <div className=" mx-auto">
-      <div className="">
-        {["TO-DO", "IN-PROGRESS", "COMPLETED"].map((status) => (
-          <div key={status} className="mt-6">
-            <h3
-              className={`text-sm  text-black py-2 px-4 rounded-t-lg ${
-                status === "TO-DO"
-                  ? "bg-fuchsia-200"
-                  : status === "IN-PROGRESS"
-                  ? "bg-cyan-200"
-                  : "bg-green-200"
-              }`}
+<div className="mx-auto">
+  <div className="">
+    {/* Column Headers */}
+    <table className="min-w-full bg-white rounded-b-lg overflow-hidden shadow-md">
+      <thead>
+        <tr className="bg-gray-100">
+          <th className="py-2 px-4 text-left">Name</th>
+          <th className="py-2 px-4 text-left">Due Date</th>
+          <th className="py-2 px-4 text-left">Task Status</th>
+          <th className="py-2 px-4 text-left">Task Category</th>
+          <th className="py-2 px-4 text-center">Actions</th>
+        </tr>
+      </thead>
+    </table>
+
+    {/* Task Sections */}
+    {["TO-DO", "IN-PROGRESS", "COMPLETED"].map((status) => (
+      <div key={status} className="mt-6">
+        {/* Section header */}
+        <div
+          onClick={() => toggleSection(status)}
+          className={`flex justify-between items-center text-sm text-black py-2 px-4 rounded-t-lg cursor-pointer ${
+            status === "TO-DO"
+              ? "bg-fuchsia-200"
+              : status === "IN-PROGRESS"
+              ? "bg-cyan-200"
+              : "bg-green-200"
+          }`}
+        >
+          <span>
+            {status === "TO-DO" ? "Todo" : status.charAt(0).toUpperCase() + status.slice(1).toLowerCase()} (
+            {getTasksByStatus(status).length})
+          </span>
+          {expandedSections[status] ? (
+            <MdOutlineExpandLess size={24} />
+          ) : (
+            <MdOutlineExpandMore size={24} />
+          )}
+        </div>
+
+        {/* Task list table */}
+        {expandedSections[status] && (
+          <>
+            {/* Add task form when 'isAdding' is true + add task is top in todo under  */}
+            {status === "TO-DO" && !isAdding && expandedSections[status] && (
+          <div className="py-4 ">
+            <button
+              onClick={() => setIsAdding(true)}
+              className="bg-purple-500 text-white px-4 py-2 rounded"
             >
-              {status === "TO-DO" ? "Todo" : status.charAt(0).toUpperCase() + status.slice(1).toLowerCase()} ({getTasksByStatus(status).length})
-            </h3>
+              + add task
+            </button>
+          </div>
+        )}
+        {/*task input show in todo under in top */}
+            {status === "TO-DO" && isAdding && (
+              <div className="py-4">
+                <div className="flex flex-wrap gap-4 items-center">
+                  <input
+                    type="text"
+                    name="name"
+                    value={newTask.name}
+                    onChange={handleInputChange}
+                    placeholder="task name"
+                    className="p-2 border rounded w-64"
+                  />
+                  <input
+                    type="date"
+                    name="date"
+                    value={newTask.date}
+                    onChange={handleInputChange}
+                    className="p-2 border rounded"
+                  />
+                  <select
+                    name="taskStatus"
+                    value={newTask.taskStatus}
+                    onChange={handleInputChange}
+                    className="p-2 border rounded"
+                  >
+                    <option value="TO-DO">to-do</option>
+                    <option value="IN-PROGRESS">in-progress</option>
+                    <option value="COMPLETED">completed</option>
+                  </select>
+                  <select
+                    name="taskCategory"
+                    value={newTask.taskCategory}
+                    onChange={handleInputChange}
+                    className="p-2 border rounded"
+                  >
+                    <option value="Work">work</option>
+                    <option value="Personal">personal</option>
+                  </select>
+                  <button
+                    onClick={handleAddTask}
+                    className="bg-purple-500 text-white px-4 py-2 rounded"
+                  >
+                    add
+                  </button>
+                  <button
+                    onClick={() => setIsAdding(false)}
+                    className="bg-gray-500 text-white px-4 py-2 rounded"
+                  >
+                    cancel
+                  </button>
+                </div>
+               
+              </div>
+            )}
+
+            {/* Task List Table */}
             <table className="min-w-full bg-white rounded-b-lg overflow-hidden shadow-md">
-              <thead>
-                <tr className="bg-gray-100">
-                  <th className="py-2 px-4 text-left">Name</th>
-                  <th className="py-2 px-4 text-left">Due Date</th>
-                  <th className="py-2 px-4 text-left">Task Status</th>
-                  <th className="py-2 px-4 text-left">Task Category</th>
-                  <th className="py-2 px-4 text-center">Actions</th>
-                </tr>
-              </thead>
               <tbody>
                 {getTasksByStatus(status).length > 0 ? (
                   getTasksByStatus(status).map((task) => (
                     <tr key={task.id} className="border-t">
                       <td className="py-2 px-4 text-sm">{task.name}</td>
                       <td className="py-2 px-4 text-sm">{task.date}</td>
-
                       <td className="py-2 px-4 text-center flex items-center justify-center gap-2">
                         <select
                           value={task.taskStatus}
@@ -152,82 +250,25 @@ const TaskManager = () => {
                     </td>
                   </tr>
                 )}
-                {status === "TO-DO" && isAdding && (
-                  <tr>
-                    <td colSpan="5" className="py-4">
-                      <div className="flex flex-wrap gap-4 items-center">
-                        <input
-                          type="text"
-                          name="name"
-                          value={newTask.name}
-                          onChange={handleInputChange}
-                          placeholder="task name"
-                          className="p-2 border rounded w-64"
-                        />
-                        <input
-                          type="date"
-                          name="date"
-                          value={newTask.date}
-                          onChange={handleInputChange}
-                          className="p-2 border rounded"
-                        />
-                        <select
-                          name="taskStatus"
-                          value={newTask.taskStatus}
-                          onChange={handleInputChange}
-                          className="p-2 border rounded"
-                        >
-                          <option value="TO-DO">to-do</option>
-                          <option value="IN-PROGRESS">in-progress</option>
-                          <option value="COMPLETED">completed</option>
-                        </select>
-                        <select
-                          name="taskCategory"
-                          value={newTask.taskCategory}
-                          onChange={handleInputChange}
-                          className="p-2 border rounded"
-                        >
-                          <option value="Work">work</option>
-                          <option value="Personal">personal</option>
-                        </select>
-                        <button
-                          onClick={handleAddTask}
-                          className="bg-purple-500 text-white px-4 py-2 rounded"
-                        >
-                          add
-                        </button>
-                        <button
-                          onClick={() => setIsAdding(false)}
-                          className="bg-gray-500 text-white px-4 py-2 rounded"
-                        >
-                          cancel
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                )}
               </tbody>
             </table>
-            {status === "TO-DO" && !isAdding && (
-              <div className="py-4 text-center">
-                <button
-                  onClick={() => setIsAdding(true)}
-                  className="bg-purple-500 text-white px-4 py-2 rounded"
-                >
-                  + add task
-                </button>
-              </div>
-            )}
-          </div>
-        ))}
-        {error && (
-          <div className="bg-red-100 text-red-800 p-4 mt-4 rounded">
-            {error}
-          </div>
+          </>
         )}
       </div>
-    </div>
+    ))}
+    {error && (
+      <div className="bg-red-100 text-red-800 p-4 mt-4 rounded">
+        {error}
+      </div>
+    )}
+  </div>
+</div>
+
+
   );
 };
 
 export default TaskManager;
+
+
+
