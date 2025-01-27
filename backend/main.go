@@ -14,6 +14,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/gridfs"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -45,14 +46,14 @@ type User struct {
 
 // InsuranceData model
 type InsuranceData struct {
-	ID            string `json:"id,omitempty" bson:"_id,omitempty"`
-	UserID        string `json:"userId" bson:"userId"`
-	Name          string `json:"name" bson:"name"`
-	Date          string `json:"date" bson:"date"`
-	InsuranceType string `json:"insuranceType" bson:"insuranceType"`
-	RenewalType   string `json:"renewalType" bson:"renewalType"`
-	TaskStatus    string `json:"taskStatus" bson:"taskStatus"`
-	TaskCategory  string `json:"taskCategory" bson:"taskCategory"`
+	ID           string `json:"id,omitempty" bson:"_id,omitempty"`
+	UserID       string `json:"userId" bson:"userId"`
+	Name         string `json:"name" bson:"name"`
+	Date         string `json:"date" bson:"date"`
+	Description  string `json:"description" bson:"description"`
+	TaskStatus   string `json:"taskStatus" bson:"taskStatus"`
+	TaskCategory string `json:"taskCategory" bson:"taskCategory"`
+	FileID       string `json:"fileId" bson:"fileId"`
 }
 
 func main() {
@@ -173,44 +174,83 @@ func Login(c *gin.Context) {
 	})
 }
 
-// SaveUserData handles saving insurance data for the logged-in user.
 func SaveUserData(c *gin.Context) {
-	var data InsuranceData
-
+	// Extract user ID from JWT token (assuming you have this part set up)
 	userID, err := ExtractUserIDFromToken(c)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"success": false,
-			"error":   "Unauthorized",
-		})
-		return
-	}
 
-	if err := c.ShouldBindJSON(&data); err != nil {
+	// Parse the form data
+	if err := c.Request.ParseMultipartForm(10 << 20); err != nil { // Limit upload size to 10MB
 		c.JSON(http.StatusBadRequest, gin.H{
 			"success": false,
-			"error":   err.Error(),
+			"error":   "Failed to parse form data",
 		})
 		return
 	}
 
-	data.UserID = userID
+	// Retrieve form fields
+	name := c.PostForm("name")
+	date := c.PostForm("date")
+	description := c.PostForm("description")
+	taskStatus := c.PostForm("taskStatus")
+	taskCategory := c.PostForm("taskCategory")
 
-	collection := Client.Database("auth_demo").Collection("insurance_data")
-
-	insertResult, err := collection.InsertOne(context.Background(), data)
+	// Handle file upload
+	file, err := c.FormFile("file")
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
+		c.JSON(http.StatusBadRequest, gin.H{
 			"success": false,
-			"error":   "Error saving data",
+			"error":   "No file uploaded",
 		})
+		return
+	}
+
+	// Open the uploaded file
+	fileContent, err := file.Open()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to open file"})
+		return
+	}
+	defer fileContent.Close()
+
+	// Initialize the GridFS bucket
+	bucket, err := gridfs.NewBucket(Client.Database("auth_demo"))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error initializing GridFS bucket"})
+		return
+	}
+
+	// Upload the file to GridFS
+	fileID, err := bucket.UploadFromStream(file.Filename, fileContent)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload file"})
+		return
+	}
+
+	// Create InsuranceData entry and save it to MongoDB
+	data := InsuranceData{
+		UserID:       userID,
+		Name:         name,
+		Date:         date,
+		Description:  description,
+		TaskStatus:   taskStatus,
+		TaskCategory: taskCategory,
+		FileID:       fileID.Hex(), // Save the GridFS file ID
+	}
+
+	// Insert data into MongoDB collection
+	collection := Client.Database("auth_demo").Collection("insurance_data")
+	_, err = collection.InsertOne(context.Background(), data)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error saving metadata"})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"success":    true,
-		"message":    "Data saved successfully",
-		"insertedId": insertResult.InsertedID,
+		"success":  true,
+		"message":  "Data saved successfully",
+		"fileId":   fileID.Hex(),
+		"fileName": file.Filename,
+		"fileUrl":  fmt.Sprintf("/files/%s", fileID.Hex()),
 	})
 }
 
@@ -239,47 +279,6 @@ func ExtractUserIDFromToken(c *gin.Context) (string, error) {
 
 	return claims["username"].(string), nil
 }
-
-// func getTask(c *gin.Context) {
-// 	userID, err := ExtractUserIDFromToken(c)
-// 	if err != nil {
-// 		c.JSON(http.StatusUnauthorized, gin.H{
-// 			"success": false,
-// 			"error":   "Unauthorized",
-// 		})
-// 		return
-// 	}
-
-// 	collection := Client.Database("auth_demo").Collection("insurance_data")
-
-// 	cursor, err := collection.Find(context.Background(), bson.M{"userId": userID})
-// 	if err != nil {
-// 		c.JSON(http.StatusInternalServerError, gin.H{
-// 			"success": false,
-// 			"error":   "Error retrieving data",
-// 		})
-// 		return
-// 	}
-// 	defer cursor.Close(context.Background())
-
-// 	var results []InsuranceData
-// 	for cursor.Next(context.Background()) {
-// 		var data InsuranceData
-// 		if err := cursor.Decode(&data); err != nil {
-// 			c.JSON(http.StatusInternalServerError, gin.H{
-// 				"success": false,
-// 				"error":   "Error decoding data",
-// 			})
-// 			return
-// 		}
-// 		results = append(results, data)
-// 	}
-
-// 	c.JSON(http.StatusOK, gin.H{
-// 		"success": true,
-// 		"data":    results,
-// 	})
-// }
 
 func getTask(c *gin.Context) {
 	userID, err := ExtractUserIDFromToken(c)

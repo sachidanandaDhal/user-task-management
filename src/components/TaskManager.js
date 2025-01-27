@@ -262,69 +262,72 @@ const TaskManager = () => {
 
                 {/* Task List Table */}
                 <table className="min-w-full bg-white rounded-b-lg overflow-hidden shadow-md">
-                <tbody>
-  {getTasksByStatus(status).length > 0 ? (
-    getTasksByStatus(status).map((task) => (
-      <tr key={task.id} className="border-t">
-        <td className="py-2 px-4 flex items-center gap-2">
-          {/* Drag and drop icon */}
-          
+                  <tbody>
+                    {getTasksByStatus(status).length > 0 ? (
+                      getTasksByStatus(status).map((task) => (
+                        <tr key={task.id} className="border-t">
+                          <td className="py-2 px-4 flex items-center gap-2">
+                            {/* Drag and drop icon */}
 
-          {/* Checkbox */}
-          <input
-            type="checkbox"
-            checked={selectedTasks.includes(task.id)}
-            onChange={() => handleSelectTask(task.id)}
-          />
-          <FaGripVertical className="text-gray-500 cursor-pointer" />
+                            {/* Checkbox */}
+                            <input
+                              type="checkbox"
+                              checked={selectedTasks.includes(task.id)}
+                              onChange={() => handleSelectTask(task.id)}
+                            />
+                            <FaGripVertical className="text-gray-500 cursor-pointer" />
 
-          {/* Status-dependent icon */}
-          {task.taskStatus === "COMPLETED" ? (
-            <AiFillCheckCircle className="text-blue-500" />
-          ) : (
-            <AiOutlineCheckCircle className="text-gray-500" />
-          )}
-        </td>
-        <td
-          className={`py-2 px-4 text-sm ${
-            task.taskStatus === "COMPLETED" ? "line-through text-gray-500" : ""
-          }`}
-        >
-          {task.name}
-        </td>
-        <td className="py-2 px-4 text-sm">{task.date}</td>
-        <td className="py-2 px-4 text-center flex items-center justify-center gap-2">
-          <select
-            value={task.taskStatus}
-            onChange={(e) => handleUpdateStatus(task.id, e.target.value)}
-            className="p-1 text-sm border rounded"
-          >
-            <option value="TO-DO">to-do</option>
-            <option value="IN-PROGRESS">in-progress</option>
-            <option value="COMPLETED">completed</option>
-          </select>
-        </td>
-        <td className="py-2 px-4 text-sm">{task.taskCategory}</td>
-        <td className="py-2 px-4">
-          <button
-            onClick={() => handleDeleteTask(task.id)}
-            className="text-red-500 font-semibold text-sm"
-          >
-            delete
-          </button>
-        </td>
-      </tr>
-    ))
-  ) : (
-    <tr>
-      <td colSpan="5" className="text-center py-4">
-        no tasks in this category.
-      </td>
-    </tr>
-  )}
-</tbody>
-
-                
+                            {/* Status-dependent icon */}
+                            {task.taskStatus === "COMPLETED" ? (
+                              <AiFillCheckCircle className="text-blue-500" />
+                            ) : (
+                              <AiOutlineCheckCircle className="text-gray-500" />
+                            )}
+                          </td>
+                          <td
+                            className={`py-2 px-4 text-sm ${
+                              task.taskStatus === "COMPLETED"
+                                ? "line-through text-gray-500"
+                                : ""
+                            }`}
+                          >
+                            {task.name}
+                          </td>
+                          <td className="py-2 px-4 text-sm">{task.date}</td>
+                          <td className="py-2 px-4 text-center flex items-center justify-center gap-2">
+                            <select
+                              value={task.taskStatus}
+                              onChange={(e) =>
+                                handleUpdateStatus(task.id, e.target.value)
+                              }
+                              className="p-1 text-sm border rounded"
+                            >
+                              <option value="TO-DO">to-do</option>
+                              <option value="IN-PROGRESS">in-progress</option>
+                              <option value="COMPLETED">completed</option>
+                            </select>
+                          </td>
+                          <td className="py-2 px-4 text-sm">
+                            {task.taskCategory}
+                          </td>
+                          <td className="py-2 px-4">
+                            <button
+                              onClick={() => handleDeleteTask(task.id)}
+                              className="text-red-500 font-semibold text-sm"
+                            >
+                              delete
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="5" className="text-center py-4">
+                          no tasks in this category.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
                 </table>
                 {/* {pop up when user multipul select task } */}
 
