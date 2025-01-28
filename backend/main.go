@@ -4,8 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"log"
+
+	// "mime/multipart"
 	"net/http"
+
+	"os"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -74,6 +79,7 @@ func main() {
 	r.POST("/register", Register)
 	r.POST("/login", Login)
 	r.POST("/saveUserData", SaveUserData)
+	// r.POST("/saveUserData1", SaveUserData1)
 	r.GET("/getTask", getTask)
 	r.DELETE("/deleteTask/:id", deleteTask)
 	r.PUT("/updateTaskStatus/:id", UpdateTaskStatus)
@@ -174,87 +180,138 @@ func Login(c *gin.Context) {
 	})
 }
 
+////////////
+
+///
+
+// SaveUserData function to handle both multipart form and JSON input
 func SaveUserData(c *gin.Context) {
-	// Extract user ID from JWT token (assuming you have this part set up)
+	// Extract user ID from JWT token
 	userID, err := ExtractUserIDFromToken(c)
-
-	// Parse the form data
-	if err := c.Request.ParseMultipartForm(10 << 20); err != nil { // Limit upload size to 10MB
-		c.JSON(http.StatusBadRequest, gin.H{
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{
 			"success": false,
-			"error":   "Failed to parse form data",
+			"error":   "Unauthorized",
 		})
 		return
 	}
 
-	// Retrieve form fields
-	name := c.PostForm("name")
-	date := c.PostForm("date")
-	description := c.PostForm("description")
-	taskStatus := c.PostForm("taskStatus")
-	taskCategory := c.PostForm("taskCategory")
+	// Determine the content type
+	contentType := c.Request.Header.Get("Content-Type")
 
-	// Handle file upload
-	file, err := c.FormFile("file")
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"success": false,
-			"error":   "No file uploaded",
-		})
-		return
+	var data InsuranceData
+	var fileID primitive.ObjectID
+	var fileName string
+
+	if contentType == "application/json" {
+		// Handle JSON input
+		if err := c.ShouldBindJSON(&data); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"success": false,
+				"error":   err.Error(),
+			})
+			return
+		}
+	} else {
+		// Handle multipart form data
+		if err := c.Request.ParseMultipartForm(10 << 20); err != nil { // Limit upload size to 10MB
+			c.JSON(http.StatusBadRequest, gin.H{
+				"success": false,
+				"error":   "Failed to parse form data",
+			})
+			return
+		}
+
+		// Retrieve form fields
+		data.Name = c.PostForm("name")
+		data.Date = c.PostForm("date")
+		data.Description = c.PostForm("description")
+		data.TaskStatus = c.PostForm("taskStatus")
+		data.TaskCategory = c.PostForm("taskCategory")
+
+		// Handle file upload
+		file, err := c.FormFile("file")
+		if err != nil || file.Filename == "" {
+			fmt.Println("No file uploaded, using default image.")
+			// No file uploaded, use default image
+			fileName = "Default.jpg"
+			fileID, err = uploadDefaultImage(fileName)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload default image"})
+				return
+			}
+		} else {
+			// Process uploaded file
+			fileContent, err := file.Open()
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to open file"})
+				return
+			}
+			defer fileContent.Close()
+
+			fileID, err = uploadFileToGridFS(file.Filename, fileContent)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload file"})
+				return
+			}
+
+			fileName = file.Filename
+		}
 	}
 
-	// Open the uploaded file
-	fileContent, err := file.Open()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to open file"})
-		return
-	}
-	defer fileContent.Close()
+	// Assign UserID and FileID to data
+	data.UserID = userID
+	data.FileID = fileID.Hex()
 
-	// Initialize the GridFS bucket
-	bucket, err := gridfs.NewBucket(Client.Database("auth_demo"))
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error initializing GridFS bucket"})
-		return
-	}
-
-	// Upload the file to GridFS
-	fileID, err := bucket.UploadFromStream(file.Filename, fileContent)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload file"})
-		return
-	}
-
-	// Create InsuranceData entry and save it to MongoDB
-	data := InsuranceData{
-		UserID:       userID,
-		Name:         name,
-		Date:         date,
-		Description:  description,
-		TaskStatus:   taskStatus,
-		TaskCategory: taskCategory,
-		FileID:       fileID.Hex(), // Save the GridFS file ID
-	}
-
-	// Insert data into MongoDB collection
+	// Save data to MongoDB
 	collection := Client.Database("auth_demo").Collection("insurance_data")
 	_, err = collection.InsertOne(context.Background(), data)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error saving metadata"})
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"error":   "Error saving data",
+		})
 		return
 	}
 
+	// Success response
 	c.JSON(http.StatusOK, gin.H{
 		"success":  true,
 		"message":  "Data saved successfully",
 		"fileId":   fileID.Hex(),
-		"fileName": file.Filename,
+		"fileName": fileName,
 		"fileUrl":  fmt.Sprintf("/files/%s", fileID.Hex()),
 	})
 }
 
-// ExtractUserIDFromToken extracts User ID from JWT token.
+// Function to upload default image
+func uploadDefaultImage(fileName string) (primitive.ObjectID, error) {
+	defaultImagePath := "./image/Default.jpg"
+	file, err := os.Open(defaultImagePath)
+	if err != nil {
+		return primitive.ObjectID{}, err
+	}
+	defer file.Close()
+
+	return uploadFileToGridFS(fileName, file)
+}
+
+// Function to upload a file to GridFS
+func uploadFileToGridFS(fileName string, fileContent io.Reader) (primitive.ObjectID, error) {
+	bucket, err := gridfs.NewBucket(Client.Database("auth_demo"))
+	if err != nil {
+		return primitive.ObjectID{}, err
+	}
+
+	fileID, err := bucket.UploadFromStream(fileName, fileContent)
+	if err != nil {
+		return primitive.ObjectID{}, err
+	}
+
+	return fileID, nil
+}
+
+// Function to extract UserID from JWT token
 func ExtractUserIDFromToken(c *gin.Context) (string, error) {
 	tokenString := c.GetHeader("Authorization")
 	if tokenString == "" {
@@ -277,7 +334,12 @@ func ExtractUserIDFromToken(c *gin.Context) (string, error) {
 		return "", errors.New("invalid token")
 	}
 
-	return claims["username"].(string), nil
+	username, ok := claims["username"].(string)
+	if !ok {
+		return "", errors.New("invalid claims")
+	}
+
+	return username, nil
 }
 
 func getTask(c *gin.Context) {

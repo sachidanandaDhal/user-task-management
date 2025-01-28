@@ -48,15 +48,32 @@ const TaskManager = () => {
     setNewTask((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleAddTask = async () => {
+  const handleAddTask = async (e) => {
+    e.preventDefault();
+  
+    setIsAdding(true);
+  
+    // Prepare form data for submission
+    const formData = new FormData();
+    
+    Object.keys(newTask).forEach((key) => {
+      formData.append(key, newTask[key]);
+    });
+  
+    console.log("Data being sent to backend:");
+    formData.forEach((value, key) => {
+      console.log(`${key}:`, value); // Logs each key-value pair in the formData
+    });
+  
     try {
-      const token = localStorage.getItem("token");
-      const response = await axios.post(
-        "http://localhost:5000/saveUserData",
-        newTask,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
+      const token = localStorage.getItem("token"); // Assuming token is stored in local storage
+      const response = await axios.post("http://localhost:5000/saveUserData", formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      console.log("Response from Backend:", response.data); 
       setTasks((prev) => [...prev, response.data]);
       setNewTask({
         name: "",
@@ -66,11 +83,10 @@ const TaskManager = () => {
       });
       setIsAdding(false);
     } catch (err) {
-      setError(
-        err.response?.data?.error || err.message || "Error adding task."
-      );
+      setError(err.response?.data?.error || err.message || "Error adding task.");
     }
   };
+  
 
   const handleUpdateStatus = async (id, newStatus) => {
     try {
@@ -298,7 +314,7 @@ const TaskManager = () => {
                             <select
                               value={task.taskStatus}
                               onChange={(e) =>
-                                handleUpdateStatus(task.id, e.target.value)
+                                handleUpdateStatus(task.id, e.target.value) 
                               }
                               className="p-1 text-sm border rounded"
                             >

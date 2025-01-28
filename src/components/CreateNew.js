@@ -87,12 +87,20 @@ const CreateNew = ({ closeModal }) => {
 
     // Prepare form data for submission
     const formData = new FormData();
+    
     Object.keys(formValues).forEach((key) => {
       formData.append(key, formValues[key]);
     });
     if (file) {
       formData.append("file", file);
     }
+
+
+    console.log("Data being sent to backend:");
+    formData.forEach((value, key) => {
+      console.log(`${key}:`, value); // Logs each key-value pair in the formData
+    });
+
 
     try {
       const token = localStorage.getItem("token"); // Assuming token is stored in local storage
@@ -102,6 +110,7 @@ const CreateNew = ({ closeModal }) => {
           "Content-Type": "multipart/form-data",
         },
       });
+      console.log("Response from Backend:", response.data); 
       alert(response.data.message); // Notify the user of the success
       closeModal(); // Call closeModal if you want to close the modal after submission
     } catch (error) {
