@@ -49,8 +49,8 @@ type User struct {
 	Password string `json:"password"`
 }
 
-// InsuranceData model
-type InsuranceData struct {
+// UserTaskData model
+type UserTaskData struct {
 	ID           string `json:"id,omitempty" bson:"_id,omitempty"`
 	UserID       string `json:"userId" bson:"userId"`
 	Name         string `json:"name" bson:"name"`
@@ -109,7 +109,7 @@ func Register(c *gin.Context) {
 		return
 	}
 
-	collection := Client.Database("auth_demo").Collection("users")
+	collection := Client.Database("taskmanagement").Collection("users")
 	_, err = collection.InsertOne(context.Background(), bson.M{
 		"username": user.Username,
 		"password": string(hashedPassword),
@@ -140,7 +140,7 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	collection := Client.Database("auth_demo").Collection("users")
+	collection := Client.Database("taskmanagement").Collection("users")
 	var foundUser User
 	err := collection.FindOne(context.Background(), bson.M{"username": user.Username}).Decode(&foundUser)
 	if err != nil {
@@ -199,7 +199,7 @@ func SaveUserData(c *gin.Context) {
 	// Determine the content type
 	contentType := c.Request.Header.Get("Content-Type")
 
-	var data InsuranceData
+	var data UserTaskData
 	var fileID primitive.ObjectID
 	var fileName string
 
@@ -264,7 +264,7 @@ func SaveUserData(c *gin.Context) {
 	data.FileID = fileID.Hex()
 
 	// Save data to MongoDB
-	collection := Client.Database("auth_demo").Collection("insurance_data")
+	collection := Client.Database("taskmanagement").Collection("task_management_data")
 	_, err = collection.InsertOne(context.Background(), data)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -298,7 +298,7 @@ func uploadDefaultImage(fileName string) (primitive.ObjectID, error) {
 
 // Function to upload a file to GridFS
 func uploadFileToGridFS(fileName string, fileContent io.Reader) (primitive.ObjectID, error) {
-	bucket, err := gridfs.NewBucket(Client.Database("auth_demo"))
+	bucket, err := gridfs.NewBucket(Client.Database("taskmanagement"))
 	if err != nil {
 		return primitive.ObjectID{}, err
 	}
@@ -360,7 +360,7 @@ func getTask(c *gin.Context) {
 		filter["taskStatus"] = taskStatus
 	}
 
-	collection := Client.Database("auth_demo").Collection("insurance_data")
+	collection := Client.Database("taskmanagement").Collection("task_management_data")
 	cursor, err := collection.Find(context.Background(), filter)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -371,9 +371,9 @@ func getTask(c *gin.Context) {
 	}
 	defer cursor.Close(context.Background())
 
-	var results []InsuranceData
+	var results []UserTaskData
 	for cursor.Next(context.Background()) {
-		var data InsuranceData
+		var data UserTaskData
 		if err := cursor.Decode(&data); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"success": false,
@@ -423,8 +423,8 @@ func deleteTask(c *gin.Context) {
 	// Log the converted objectID
 	fmt.Println("Converted ObjectID:", objectID)
 
-	// Access the "insurance_data" collection
-	collection := Client.Database("auth_demo").Collection("insurance_data")
+	// Access the "task_management_data" collection
+	collection := Client.Database("taskmanagement").Collection("task_management_data")
 
 	// Create a filter to ensure that only the insurance data belonging to the logged-in user can be deleted
 	filter := bson.M{"_id": objectID, "userId": userID}
@@ -504,7 +504,7 @@ func UpdateTaskStatus(c *gin.Context) {
 	}
 
 	// Perform the update
-	collection := Client.Database("auth_demo").Collection("insurance_data")
+	collection := Client.Database("taskmanagement").Collection("task_management_data")
 	filter := bson.M{"_id": objectID, "userId": userID}
 	update := bson.M{"$set": bson.M{"taskStatus": payload.TaskStatus}}
 
