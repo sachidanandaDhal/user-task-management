@@ -331,6 +331,10 @@ const TaskManager = () => {
                             {task.name}
                           </td>
                           <td className="py-2 px-4 text-sm">{task.date}</td>
+                          <td>
+  <img src={task.fileUrl} alt="Task Image" width="200" />
+</td>
+
                           <td className="py-2 px-4 text-center flex items-center justify-center gap-2">
                             <select
                               value={task.taskStatus}

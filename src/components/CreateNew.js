@@ -21,8 +21,13 @@ const CreateNew =  ({ closeModal, taskData }) => {
         taskStatus: taskData.taskStatus,
         taskCategory: taskData.taskCategory,
       });
-      setFilePreview(taskData.filePreview || null); // Set file preview if any
+      if (taskData.fileUrl) {
+        setFilePreview(taskData.fileUrl); // Use the existing image URL
+      } else {
+        setFilePreview(null);
+      }
     }
+    
   }, [taskData]);
 
   const [errors, setErrors] = useState({});

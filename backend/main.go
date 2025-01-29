@@ -1,15 +1,13 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
 	"io"
 	"log"
-
-	// "mime/multipart"
 	"net/http"
-
 	"os"
 	"time"
 
@@ -26,7 +24,7 @@ import (
 
 var Client *mongo.Client
 
-// Initialize MongoDB connection
+// Initialize MongoDB Connection
 func InitMongoDB() {
 	var err error
 	Client, err = mongo.NewClient(options.Client().ApplyURI("mongodb://localhost:27017"))
@@ -51,23 +49,23 @@ type User struct {
 
 // UserTaskData model
 type UserTaskData struct {
-	ID           string `json:"id,omitempty" bson:"_id,omitempty"`
-	UserID       string `json:"userId" bson:"userId"`
-	Name         string `json:"name" bson:"name"`
-	Date         string `json:"date" bson:"date"`
-	Description  string `json:"description" bson:"description"`
-	TaskStatus   string `json:"taskStatus" bson:"taskStatus"`
-	TaskCategory string `json:"taskCategory" bson:"taskCategory"`
-	FileID       string `json:"fileId" bson:"fileId"`
+	ID           primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
+	UserID       string             `json:"userId" bson:"userId"`
+	Name         string             `json:"name" bson:"name"`
+	Date         string             `json:"date" bson:"date"`
+	Description  string             `json:"description" bson:"description"`
+	TaskStatus   string             `json:"taskStatus" bson:"taskStatus"`
+	TaskCategory string             `json:"taskCategory" bson:"taskCategory"`
+	FileURL      string             `json:"fileUrl" bson:"fileUrl"`
 }
 
 func main() {
 	InitMongoDB()
 	r := gin.Default()
 
-	// CORS configuration
+	// CORS Configuration
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:3000"}, // Ensure this matches the frontend origin
+		AllowOrigins:     []string{"http://localhost:3000"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
@@ -75,12 +73,12 @@ func main() {
 		MaxAge:           12 * time.Hour,
 	}))
 
-	// Set up routes
+	// Routes
 	r.POST("/register", Register)
 	r.POST("/login", Login)
 	r.POST("/saveUserData", SaveUserData)
-	// r.POST("/saveUserData1", SaveUserData1)
 	r.GET("/getTask", getTask)
+	r.GET("/files/:id", ServeFile)
 	r.DELETE("/deleteTask/:id", deleteTask)
 	r.PUT("/updateTaskStatus/:id", UpdateTaskStatus)
 
@@ -89,159 +87,48 @@ func main() {
 	}
 }
 
-// Register handles user registration and returns a structured JSON response.
-func Register(c *gin.Context) {
-	var user User
-	if err := c.ShouldBindJSON(&user); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"success": false,
-			"error":   err.Error(),
-		})
-		return
-	}
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), 14)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"success": false,
-			"error":   "Failed to hash password",
-		})
-		return
-	}
 
-	collection := Client.Database("taskmanagement").Collection("users")
-	_, err = collection.InsertOne(context.Background(), bson.M{
-		"username": user.Username,
-		"password": string(hashedPassword),
-	})
-
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"success": false,
-			"error":   "Failed to register user",
-		})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "Registration successful",
-	})
-}
-
-// Login function to authenticate the user and return a JWT token with a structured JSON response.
-func Login(c *gin.Context) {
-	var user User
-	if err := c.ShouldBindJSON(&user); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"success": false,
-			"error":   err.Error(),
-		})
-		return
-	}
-
-	collection := Client.Database("taskmanagement").Collection("users")
-	var foundUser User
-	err := collection.FindOne(context.Background(), bson.M{"username": user.Username}).Decode(&foundUser)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"success": false,
-			"error":   "Invalid credentials",
-		})
-		return
-	}
-
-	err = bcrypt.CompareHashAndPassword([]byte(foundUser.Password), []byte(user.Password))
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"success": false,
-			"error":   "Invalid credentials",
-		})
-		return
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"username": user.Username,
-		"exp":      time.Now().Add(time.Hour * 24).Unix(),
-	})
-
-	tokenString, err := token.SignedString([]byte("secret"))
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"success": false,
-			"error":   "Failed to generate token",
-		})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"token":   tokenString,
-	})
-}
-
-////////////
-
-///
-
-// SaveUserData function to handle both multipart form and JSON input
+// Save User Task Data
 func SaveUserData(c *gin.Context) {
-	// Extract user ID from JWT token
 	userID, err := ExtractUserIDFromToken(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"success": false,
-			"error":   "Unauthorized",
-		})
+		c.JSON(http.StatusUnauthorized, gin.H{"success": false, "error": "Unauthorized"})
 		return
 	}
 
-	// Determine the content type
+	var data UserTaskData
+	var fileURL string
+
 	contentType := c.Request.Header.Get("Content-Type")
 
-	var data UserTaskData
-	var fileID primitive.ObjectID
-	var fileName string
-
 	if contentType == "application/json" {
-		// Handle JSON input
 		if err := c.ShouldBindJSON(&data); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"success": false,
-				"error":   err.Error(),
-			})
+			c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": err.Error()})
 			return
 		}
+		fileURL = "http://localhost:5000/files/default"
 	} else {
-		// Handle multipart form data
-		if err := c.Request.ParseMultipartForm(10 << 20); err != nil { // Limit upload size to 10MB
-			c.JSON(http.StatusBadRequest, gin.H{
-				"success": false,
-				"error":   "Failed to parse form data",
-			})
+		if err := c.Request.ParseMultipartForm(10 << 20); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "Failed to parse form data"})
 			return
 		}
 
-		// Retrieve form fields
 		data.Name = c.PostForm("name")
 		data.Date = c.PostForm("date")
 		data.Description = c.PostForm("description")
 		data.TaskStatus = c.PostForm("taskStatus")
 		data.TaskCategory = c.PostForm("taskCategory")
 
-		// Handle file upload
 		file, err := c.FormFile("file")
 		if err != nil || file.Filename == "" {
-			fmt.Println("No file uploaded, using default image.")
-			// No file uploaded, use default image
-			fileName = "Default.jpg"
-			fileID, err = uploadDefaultImage(fileName)
+			fileID, err := uploadDefaultImage()
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload default image"})
 				return
 			}
+			fileURL = fmt.Sprintf("http://localhost:5000/files/%s", fileID.Hex())
 		} else {
-			// Process uploaded file
 			fileContent, err := file.Open()
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to open file"})
@@ -249,54 +136,61 @@ func SaveUserData(c *gin.Context) {
 			}
 			defer fileContent.Close()
 
-			fileID, err = uploadFileToGridFS(file.Filename, fileContent)
+			fileID, err := uploadFileToGridFS(file.Filename, fileContent)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload file"})
 				return
 			}
-
-			fileName = file.Filename
+			fileURL = fmt.Sprintf("http://localhost:5000/files/%s", fileID.Hex())
 		}
 	}
 
-	// Assign UserID and FileID to data
 	data.UserID = userID
-	data.FileID = fileID.Hex()
+	data.FileURL = fileURL
 
-	// Save data to MongoDB
 	collection := Client.Database("taskmanagement").Collection("task_management_data")
 	_, err = collection.InsertOne(context.Background(), data)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"success": false,
-			"error":   "Error saving data",
-		})
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Error saving data"})
 		return
 	}
 
-	// Success response
-	c.JSON(http.StatusOK, gin.H{
-		"success":  true,
-		"message":  "Data saved successfully",
-		"fileId":   fileID.Hex(),
-		"fileName": fileName,
-		"fileUrl":  fmt.Sprintf("/files/%s", fileID.Hex()),
-	})
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": "Data saved successfully", "fileUrl": fileURL})
 }
 
-// Function to upload default image
-func uploadDefaultImage(fileName string) (primitive.ObjectID, error) {
-	defaultImagePath := "./image/Default.jpg"
-	file, err := os.Open(defaultImagePath)
-	if err != nil {
-		return primitive.ObjectID{}, err
+// Retrieve Image from GridFS
+func ServeFile(c *gin.Context) {
+	fileID := c.Param("id")
+
+	if fileID == "default" {
+		c.File("./image/Default.jpg")
+		return
 	}
-	defer file.Close()
 
-	return uploadFileToGridFS(fileName, file)
+	objectID, err := primitive.ObjectIDFromHex(fileID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid file ID"})
+		return
+	}
+
+	bucket, err := gridfs.NewBucket(Client.Database("taskmanagement"))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error accessing GridFS"})
+		return
+	}
+
+	var buffer []byte
+	buf := bytes.NewBuffer(buffer)
+	_, err = bucket.DownloadToStream(objectID, buf)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "File not found"})
+		return
+	}
+
+	c.Data(http.StatusOK, "image/jpeg", buf.Bytes())
 }
 
-// Function to upload a file to GridFS
+// Upload File to GridFS
 func uploadFileToGridFS(fileName string, fileContent io.Reader) (primitive.ObjectID, error) {
 	bucket, err := gridfs.NewBucket(Client.Database("taskmanagement"))
 	if err != nil {
@@ -311,7 +205,19 @@ func uploadFileToGridFS(fileName string, fileContent io.Reader) (primitive.Objec
 	return fileID, nil
 }
 
-// Function to extract UserID from JWT token
+// Upload Default Image
+func uploadDefaultImage() (primitive.ObjectID, error) {
+	defaultImagePath := "./image/Default.jpg"
+	file, err := os.Open(defaultImagePath)
+	if err != nil {
+		return primitive.ObjectID{}, err
+	}
+	defer file.Close()
+
+	return uploadFileToGridFS("Default.jpg", file)
+}
+
+// Extract UserID from JWT
 func ExtractUserIDFromToken(c *gin.Context) (string, error) {
 	tokenString := c.GetHeader("Authorization")
 	if tokenString == "" {
@@ -330,8 +236,8 @@ func ExtractUserIDFromToken(c *gin.Context) (string, error) {
 	}
 
 	claims, ok := token.Claims.(jwt.MapClaims)
-	if !ok || !token.Valid {
-		return "", errors.New("invalid token")
+	if !ok {
+		return "", errors.New("invalid claims")
 	}
 
 	username, ok := claims["username"].(string)
@@ -342,19 +248,15 @@ func ExtractUserIDFromToken(c *gin.Context) (string, error) {
 	return username, nil
 }
 
+// Get Task Data
 func getTask(c *gin.Context) {
 	userID, err := ExtractUserIDFromToken(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"success": false,
-			"error":   "Unauthorized",
-		})
+		c.JSON(http.StatusUnauthorized, gin.H{"success": false, "error": "Unauthorized"})
 		return
 	}
 
-	// Optional filter for task status
 	taskStatus := c.Query("status")
-
 	filter := bson.M{"userId": userID}
 	if taskStatus != "" {
 		filter["taskStatus"] = taskStatus
@@ -363,10 +265,7 @@ func getTask(c *gin.Context) {
 	collection := Client.Database("taskmanagement").Collection("task_management_data")
 	cursor, err := collection.Find(context.Background(), filter)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"success": false,
-			"error":   "Error retrieving data",
-		})
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Error retrieving data"})
 		return
 	}
 	defer cursor.Close(context.Background())
@@ -375,19 +274,13 @@ func getTask(c *gin.Context) {
 	for cursor.Next(context.Background()) {
 		var data UserTaskData
 		if err := cursor.Decode(&data); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"success": false,
-				"error":   "Error decoding data",
-			})
+			c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Error decoding data"})
 			return
 		}
 		results = append(results, data)
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"data":    results,
-	})
+	c.JSON(http.StatusOK, gin.H{"success": true, "data": results})
 }
 
 func deleteTask(c *gin.Context) {
@@ -530,5 +423,96 @@ func UpdateTaskStatus(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "Task status updated successfully",
+	})
+}
+
+// Register handles user registration and returns a structured JSON response.
+func Register(c *gin.Context) {
+	var user User
+	if err := c.ShouldBindJSON(&user); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"error":   err.Error(),
+		})
+		return
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), 14)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"error":   "Failed to hash password",
+		})
+		return
+	}
+
+	collection := Client.Database("taskmanagement").Collection("users")
+	_, err = collection.InsertOne(context.Background(), bson.M{
+		"username": user.Username,
+		"password": string(hashedPassword),
+	})
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"error":   "Failed to register user",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "Registration successful",
+	})
+}
+
+// Login function to authenticate the user and return a JWT token with a structured JSON response.
+func Login(c *gin.Context) {
+	var user User
+	if err := c.ShouldBindJSON(&user); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"error":   err.Error(),
+		})
+		return
+	}
+
+	collection := Client.Database("taskmanagement").Collection("users")
+	var foundUser User
+	err := collection.FindOne(context.Background(), bson.M{"username": user.Username}).Decode(&foundUser)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"success": false,
+			"error":   "Invalid credentials",
+		})
+		return
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(foundUser.Password), []byte(user.Password))
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"success": false,
+			"error":   "Invalid credentials",
+		})
+		return
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"username": user.Username,
+		"exp":      time.Now().Add(time.Hour * 24).Unix(),
+	})
+
+	tokenString, err := token.SignedString([]byte("secret"))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"error":   "Failed to generate token",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"token":   tokenString,
 	})
 }
