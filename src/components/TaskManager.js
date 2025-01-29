@@ -3,6 +3,8 @@ import axios from "axios";
 import { MdOutlineExpandMore, MdOutlineExpandLess } from "react-icons/md";
 import { FaGripVertical } from "react-icons/fa"; // Drag icon
 import { AiOutlineCheckCircle, AiFillCheckCircle } from "react-icons/ai";
+import { BiDotsHorizontalRounded } from "react-icons/bi"; // More options icon
+import CreateNew from "./CreateNew";
 
 const TaskManager = () => {
   const [tasks, setTasks] = useState([]);
@@ -21,6 +23,10 @@ const TaskManager = () => {
   });
   const [selectedTasks, setSelectedTasks] = useState([]);
   const [showPopup, setShowPopup] = useState(false);
+  const [showOptions, setShowOptions] = useState(null);
+
+  const [editTask, setEditTask] = useState(null); // State to track the task being edited
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false); // Track modal visibility
 
   useEffect(() => {
     const fetchTasks = async () => {
@@ -162,6 +168,21 @@ const TaskManager = () => {
         err.response?.data?.error || err.message || "Error deleting tasks."
       );
     }
+  };
+  const toggleOptions = (taskId) => {
+    // Toggle options for the clicked task, close others
+    setShowOptions((prev) => (prev === taskId ? null : taskId));
+  };
+
+  const handleEditTask = (task) => {
+    setEditTask(task); // Set the task to edit
+    setIsEditModalOpen(true); // Open the edit modal
+  };
+
+  // Close modal (can be passed to the CreateNew component)
+  const closeModal = () => {
+    setIsEditModalOpen(false); // Close the modal
+    setEditTask(null); // Reset the task being edited
   };
 
   return (
@@ -326,13 +347,24 @@ const TaskManager = () => {
                           <td className="py-2 px-4 text-sm">
                             {task.taskCategory}
                           </td>
-                          <td className="py-2 px-4">
-                            <button
-                              onClick={() => handleDeleteTask(task.id)}
-                              className="text-red-500 font-semibold text-sm"
-                            >
-                              delete
-                            </button>
+                          <td className="py-2 px-4 text-center">
+                            {/* More options button */}
+                            <BiDotsHorizontalRounded
+                              size={24}
+                              onClick={() => toggleOptions(task.id)}
+                            />
+
+                            {showOptions === task.id && (
+                              <div className="absolute mt-2 bg-white shadow-lg rounded border">
+                                <button
+                                  onClick={() => handleDeleteTask(task.id)}
+                                  className="px-4 py-2 text-red-500"
+                                >
+                                  Delete
+                                </button>
+                                <button onClick={() => handleEditTask(task)} className="px-4 py-2 text-blue-500">Edit</button>
+                              </div>
+                            )}
                           </td>
                         </tr>
                       ))
@@ -447,6 +479,7 @@ const TaskManager = () => {
           </div>
         )}
       </div>
+         {isEditModalOpen && <CreateNew closeModal={closeModal} taskData={editTask} />}
     </div>
   );
 };

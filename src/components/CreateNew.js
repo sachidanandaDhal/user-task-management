@@ -1,8 +1,8 @@
 
-import React, { useState } from "react";
+import React, { useState ,useEffect } from "react";
 import axios from "axios";
 
-const CreateNew = ({ closeModal }) => {
+const CreateNew =  ({ closeModal, taskData }) => {
   const [file, setFile] = useState(null);
   const [filePreview, setFilePreview] = useState(null); // State to hold file preview
   const [formValues, setFormValues] = useState({
@@ -12,6 +12,18 @@ const CreateNew = ({ closeModal }) => {
     taskStatus: "",
     taskCategory: "",
   });
+  useEffect(() => {
+    if (taskData) {
+      setFormValues({
+        name: taskData.name,
+        description: taskData.description,
+        date: taskData.date,
+        taskStatus: taskData.taskStatus,
+        taskCategory: taskData.taskCategory,
+      });
+      setFilePreview(taskData.filePreview || null); // Set file preview if any
+    }
+  }, [taskData]);
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false); // State for form submission status
@@ -138,7 +150,7 @@ const CreateNew = ({ closeModal }) => {
         <div className="p-6 h-full flex flex-col">
           {/* Header */}
           <header className="flex justify-between items-center border-b pb-4">
-            <h2 className="text-xl font-semibold text-gray-700">Create Task</h2>
+            <h2 className="text-xl font-semibold text-gray-700">{taskData ? "Edit Task" : "Create Task"}</h2>
             <span
               className="text-gray-600 text-2xl font-bold cursor-pointer hover:text-red-600 transition"
               onClick={closeModal}
