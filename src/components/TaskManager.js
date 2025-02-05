@@ -88,6 +88,9 @@ const TaskManager = () => {
         taskCategory: "Work",
       });
       setIsAdding(false);
+      if (response.data.success) {
+        setTasks((prevTasks) => [...prevTasks, response.data.newTask]); // Update state immediately
+      }
     } catch (err) {
       setError(err.response?.data?.error || err.message || "Error adding task.");
     }

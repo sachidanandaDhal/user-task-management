@@ -91,63 +91,67 @@ const CreateNew =  ({ closeModal, taskData }) => {
     setErrors((prev) => ({ ...prev, [name]: false }));
   };
 
-  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+  
     if (!validateFields()) {
       alert("Please fill in all fields.");
       return;
     }
-
+  
     setIsSubmitting(true);
-
-    // Prepare form data for submission
+  
     const formData = new FormData();
-    
     Object.keys(formValues).forEach((key) => {
       formData.append(key, formValues[key]);
     });
+  
     if (file) {
       formData.append("file", file);
     }
-
-
+  
     console.log("Data being sent to backend:");
-    formData.forEach((value, key) => {
-      console.log(`${key}:`, value); // Logs each key-value pair in the formData
-    });
-
-
+    formData.forEach((value, key) => console.log(`${key}:`, value));
+  
     try {
-      const token = localStorage.getItem("token"); // Assuming token is stored in local storage
-      const response = await axios.post("http://localhost:5000/saveUserData", formData, {
+      const token = localStorage.getItem("token");
+      const config = {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",
         },
-      });
-      console.log("Response from Backend:", response.data); 
-      alert(response.data.message); // Notify the user of the success
-      closeModal(); // Call closeModal if you want to close the modal after submission
+      };
+  
+      let response;
+      if (taskData) {
+        // Editing an existing task (send a PUT request)
+        response = await axios.put(`http://localhost:5000/updateTask/${taskData.id}`, formData, config);
+      } else {
+        // Creating a new task (send a POST request)
+        response = await axios.post("http://localhost:5000/saveUserData", formData, config);
+      }
+  
+      console.log("Response from Backend:", response.data);
+      alert(response.data.message);
+      closeModal(); // Close the modal after submission
     } catch (error) {
       alert(error.response?.data?.error || "An error occurred while saving data.");
     } finally {
       setIsSubmitting(false);
     }
 
-    // Reset form values and errors after submission if needed
     setFormValues({
-      name: "",
-      description: "",
-      date: "",
-      taskStatus: "",
-      taskCategory: "",
-    });
-    setFile(null);
-    setFilePreview(null); // Reset file preview
-    setErrors({});
+          name: "",
+          description: "",
+          date: "",
+          taskStatus: "",
+          taskCategory: "",
+        });
+        setFile(null);
+        setFilePreview(null); // Reset file preview
+        setErrors({});
   };
+  
 
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">

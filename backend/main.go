@@ -81,13 +81,12 @@ func main() {
 	r.GET("/files/:id", ServeFile)
 	r.DELETE("/deleteTask/:id", deleteTask)
 	r.PUT("/updateTaskStatus/:id", UpdateTaskStatus)
+	r.PUT("/updateTask/:id", UpdateTask)
 
 	if err := r.Run(":5000"); err != nil {
 		log.Fatal("Server run failed:", err)
 	}
 }
-
-
 
 // Save User Task Data
 func SaveUserData(c *gin.Context) {
@@ -149,13 +148,27 @@ func SaveUserData(c *gin.Context) {
 	data.FileURL = fileURL
 
 	collection := Client.Database("taskmanagement").Collection("task_management_data")
-	_, err = collection.InsertOne(context.Background(), data)
+	result, err := collection.InsertOne(context.Background(), data)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Error saving data"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"success": true, "message": "Data saved successfully", "fileUrl": fileURL})
+	// Fetch the newly inserted task using its ID
+	var insertedTask UserTaskData
+	err = collection.FindOne(context.Background(), bson.M{"_id": result.InsertedID}).Decode(&insertedTask)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Error retrieving saved data"})
+		return
+	}
+
+	// Return the newly created task to the frontend
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "Data saved successfully",
+		"fileUrl": fileURL,
+		"newTask": insertedTask, // Send the inserted task data
+	})
 }
 
 // Retrieve Image from GridFS
@@ -347,6 +360,90 @@ func deleteTask(c *gin.Context) {
 		"success": true,
 		"message": "Insurance data deleted successfully", // Success message
 	})
+}
+
+// UpdateTask - Updates task data
+func UpdateTask(c *gin.Context) {
+	taskID := c.Param("id")
+	objectID, err := primitive.ObjectIDFromHex(taskID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid task ID"})
+		return
+	}
+
+	// Extract UserID from JWT
+	userID, err := ExtractUserIDFromToken(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"success": false, "error": "Unauthorized"})
+		return
+	}
+
+	var updateData bson.M
+
+	contentType := c.Request.Header.Get("Content-Type")
+	if contentType == "application/json" {
+		var taskData UserTaskData
+		if err := c.ShouldBindJSON(&taskData); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+			return
+		}
+
+		updateData = bson.M{
+			"name":         taskData.Name,
+			"date":         taskData.Date,
+			"description":  taskData.Description,
+			"taskStatus":   taskData.TaskStatus,
+			"taskCategory": taskData.TaskCategory,
+		}
+	} else {
+		if err := c.Request.ParseMultipartForm(10 << 20); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to parse form data"})
+			return
+		}
+
+		updateData = bson.M{
+			"name":         c.PostForm("name"),
+			"date":         c.PostForm("date"),
+			"description":  c.PostForm("description"),
+			"taskStatus":   c.PostForm("taskStatus"),
+			"taskCategory": c.PostForm("taskCategory"),
+		}
+
+		file, err := c.FormFile("file")
+		if err == nil && file.Filename != "" {
+			fileContent, err := file.Open()
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to open file"})
+				return
+			}
+			defer fileContent.Close()
+
+			fileID, err := uploadFileToGridFS(file.Filename, fileContent)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload file"})
+				return
+			}
+			updateData["fileUrl"] = fmt.Sprintf("http://localhost:5000/files/%s", fileID.Hex())
+		}
+	}
+
+	collection := Client.Database("taskmanagement").Collection("task_management_data")
+
+	filter := bson.M{"_id": objectID, "userId": userID}
+	update := bson.M{"$set": updateData}
+
+	result, err := collection.UpdateOne(context.Background(), filter, update)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update task"})
+		return
+	}
+
+	if result.ModifiedCount == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Task not found or no changes made"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": "Task updated successfully"})
 }
 
 // UpdateTaskStatus allows updating the status of a task (TO-DO, IN-PROGRESS, COMPLETED).
