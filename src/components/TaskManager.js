@@ -335,7 +335,7 @@ const TaskManager = () => {
                           </td>
                           <td className="py-2 px-4 text-sm">{task.date}</td>
                           <td>
-  <img src={task.fileUrl} alt="Task Image" width="200" />
+  <img src={task.fileUrl} alt="Task Image" width="40" />
 </td>
 
                           <td className="py-2 px-4 text-center flex items-center justify-center gap-2">
