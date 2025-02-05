@@ -269,18 +269,25 @@ const CreateNew =  ({ closeModal, taskData }) => {
 
             {/* Submit Button */}
             <div className="flex justify-end mt-4">
-              <button
-                type="submit"
-                className="bg-blue-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-blue-700 transition duration-300 ease"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? (
-                  <span className="animate-spin">⏳</span> // Simple spinner icon
-                ) : (
-                  "Submit"
-                )}
-              </button>
-            </div>
+  {taskData ? (
+    <button
+      type="submit"
+      className="bg-green-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-green-700 transition duration-300 ease"
+      disabled={isSubmitting}
+    >
+      {isSubmitting ? <span className="animate-spin">⏳</span> : "Update"}
+    </button>
+  ) : (
+    <button
+      type="submit"
+      className="bg-blue-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-blue-700 transition duration-300 ease"
+      disabled={isSubmitting}
+    >
+      {isSubmitting ? <span className="animate-spin">⏳</span> : "Create"}
+    </button>
+  )}
+</div>
+
           </form>
         </div>
       </div>
