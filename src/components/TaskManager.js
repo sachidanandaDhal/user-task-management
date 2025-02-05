@@ -56,30 +56,34 @@ const TaskManager = () => {
 
   const handleAddTask = async (e) => {
     e.preventDefault();
-  
+
     setIsAdding(true);
-  
+
     // Prepare form data for submission
     const formData = new FormData();
-    
+
     Object.keys(newTask).forEach((key) => {
       formData.append(key, newTask[key]);
     });
-  
+
     console.log("Data being sent to backend:");
     formData.forEach((value, key) => {
       console.log(`${key}:`, value); // Logs each key-value pair in the formData
     });
-  
+
     try {
       const token = localStorage.getItem("token"); // Assuming token is stored in local storage
-      const response = await axios.post("http://localhost:5000/saveUserData", formData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "multipart/form-data",
-        },
-      });
-      console.log("Response from Backend:", response.data); 
+      const response = await axios.post(
+        "http://localhost:5000/saveUserData",
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+      console.log("Response from Backend:", response.data);
       setTasks((prev) => [...prev, response.data]);
       setNewTask({
         name: "",
@@ -92,10 +96,11 @@ const TaskManager = () => {
         setTasks((prevTasks) => [...prevTasks, response.data.newTask]); // Update state immediately
       }
     } catch (err) {
-      setError(err.response?.data?.error || err.message || "Error adding task.");
+      setError(
+        err.response?.data?.error || err.message || "Error adding task."
+      );
     }
   };
-  
 
   const handleUpdateStatus = async (id, newStatus) => {
     try {
@@ -335,14 +340,18 @@ const TaskManager = () => {
                           </td>
                           <td className="py-2 px-4 text-sm">{task.date}</td>
                           <td>
-  <img src={task.fileUrl} alt="Task Image" width="40" />
-</td>
+                            <img
+                              src={task.fileUrl}
+                              alt="Task Pic"
+                              width="40"
+                            />
+                          </td>
 
                           <td className="py-2 px-4 text-center flex items-center justify-center gap-2">
                             <select
                               value={task.taskStatus}
                               onChange={(e) =>
-                                handleUpdateStatus(task.id, e.target.value) 
+                                handleUpdateStatus(task.id, e.target.value)
                               }
                               className="p-1 text-sm border rounded"
                             >
@@ -369,7 +378,12 @@ const TaskManager = () => {
                                 >
                                   Delete
                                 </button>
-                                <button onClick={() => handleEditTask(task)} className="px-4 py-2 text-blue-500">Edit</button>
+                                <button
+                                  onClick={() => handleEditTask(task)}
+                                  className="px-4 py-2 text-blue-500"
+                                >
+                                  Edit
+                                </button>
                               </div>
                             )}
                           </td>
@@ -486,7 +500,9 @@ const TaskManager = () => {
           </div>
         )}
       </div>
-         {isEditModalOpen && <CreateNew closeModal={closeModal} taskData={editTask} />}
+      {isEditModalOpen && (
+        <CreateNew closeModal={closeModal} taskData={editTask} />
+      )}
     </div>
   );
 };
