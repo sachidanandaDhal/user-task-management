@@ -3,7 +3,8 @@ import Navbar from './Navbar.js';
 // import MainContainer from './MainContainer';
 import Footer from './Footer';
 import { Route, Routes } from "react-router-dom";
-import TaskManager from './TaskManager';
+// import TaskManager from './TaskManager';
+import Test1 from './Test1';
 
 function Home() {
   const [successMessage, setSuccessMessage] = useState("");
@@ -14,7 +15,8 @@ function Home() {
         <main className="flex-grow  p-4">
           <Routes>
             {/* Default route */}
-            <Route path="/" element={<TaskManager successMessage={successMessage}/>} />
+            {/* <Route path="/" element={<TaskManager successMessage={successMessage}/>} /> */}
+            <Route path="/" element={<Test1 successMessage={successMessage}/>} />
           </Routes>
         </main>
       
