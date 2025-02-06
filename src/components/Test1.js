@@ -204,171 +204,90 @@ const Test1 = ({ successMessage }) => {
     return (
       <tr ref={ref} className="border-t cursor-pointer">
         <td className="py-3 px-4">
-    <div className="flex items-center gap-3">
-      <input
-        type="checkbox"
-        checked={selectedTasks.includes(task.id)}
-        onChange={() => handleSelectTask(task.id)}
-        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-      />
-      <FaGripVertical className="text-gray-400 cursor-move hover:text-gray-600" />
-      {task.taskStatus === "COMPLETED" ? (
-        <AiFillCheckCircle className="text-green-600 w-5 h-5" />
-      ) : (
-        <AiOutlineCheckCircle className="text-gray-400 w-5 h-5 hover:text-gray-600" />
-      )}
-    </div>
-  </td>
-  
-  <td className="py-3 px-4 text-gray-700 font-medium text-sm">{task.name}</td>
-  
-  <td className="py-3 px-4 text-gray-500 text-sm">
-    <span className="inline-block min-w-[100px]">{task.date}</span>
-  </td>
-  
-  <td className="py-3 px-4">
-        {task.fileUrl && (
-          <img 
-            src={task.fileUrl} 
-            alt="Task Preview" 
-            className="w-10 h-10 object-cover rounded-md border border-gray-200"
-          />
-        )}
-      </td>
-  
-  <td className="py-3 px-4">
-    <select
-      value={task.taskStatus}
-      onChange={(e) => handleUpdateStatus(task.id, e.target.value)}
-      className="w-full px-3 py-1 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-    >
-      <option value="TO-DO" className="text-gray-500">to-do</option>
-      <option value="IN-PROGRESS" className="text-yellow-600">in-progress</option>
-      <option value="COMPLETED" className="text-green-600">completed</option>
-    </select>
-  </td>
-  
-  <td className="py-3 px-4">
-    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-      {task.taskCategory}
-    </span>
-  </td>
-  
-  <td className="py-3 px-4 text-right relative">
-    <BiDotsHorizontalRounded
-      size={24}
-      onClick={() => toggleOptions(task.id)}
-      className="text-gray-400 hover:text-gray-600 cursor-pointer"
-    />
-
-    {showOptions === task.id && (
-      <div className="absolute right-0 z-10 mt-1 w-32 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
-        <div className="py-1">
-          <button
-            onClick={() => handleDeleteTask(task.id)}
-            className="block w-full px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
-          >
-            Delete
-          </button>
-          <button
-            onClick={() => handleEditTask(task)}
-            className="block w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-          >
-            Edit
-          </button>
-        </div>
-      </div>
-    )}
-  </td>
-
-        {showPopup && (
-          <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-black text-white border border-gray-600 p-4 rounded-full w-11/12 max-w-md shadow-lg flex items-center gap-4">
-            {/* Selected tasks text */}
-            <div className="flex items-center gap-2">
-              <h3 className="text-sm font-bold bg-gray-800 px-4 py-1 rounded-full">
-                {selectedTasks.length} Task(s) Selected
-                <button
-                  onClick={() => setSelectedTasks([]) || setShowPopup(false)}
-                  className="text-gray-100 hover:text-white text-xs pl-2"
-                >
-                  ✕
-                </button>
-              </h3>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="clearSelection"
-                onChange={(e) => {
-                  if (e.target.checked) {
-                    setShowPopup(false) || setSelectedTasks([]); // Clear all selected tasks
-                  }
-                }}
-                className="h-4 w-4"
-              />
-            </div>
-
-            {/* Dropdown for status selection */}
-            <div className="flex items-center gap-2">
-              <select
-                id="status"
-                onChange={async (e) => {
-                  const newStatus = e.target.value;
-                  try {
-                    const token = localStorage.getItem("token");
-                    await Promise.all(
-                      selectedTasks.map((id) =>
-                        axios.put(
-                          `http://localhost:5000/updateTaskStatus/${id}`,
-                          { taskStatus: newStatus },
-                          {
-                            headers: {
-                              Authorization: `Bearer ${token}`,
-                            },
-                          }
-                        )
-                      )
-                    );
-
-                    // Update the tasks state locally
-                    setTasks((prev) =>
-                      prev.map((task) =>
-                        selectedTasks.includes(task.id)
-                          ? { ...task, taskStatus: newStatus }
-                          : task
-                      )
-                    );
-                    setSelectedTasks([]); // Clear selected tasks
-                    setShowPopup(false); // Close the popup
-                  } catch (err) {
-                    setError(
-                      err.response?.data?.error ||
-                        err.message ||
-                        "Error updating tasks."
-                    );
-                  }
-                }}
-                className="p-2 text-xs bg-black text-white border border-gray-600 rounded-lg appearance-none focus:outline-none"
-              >
-                <option value="" disabled selected>
-                  Status
-                </option>
-                <option value="TO-DO">TO-DO</option>
-                <option value="IN-PROGRESS">IN-PROGRESS</option>
-                <option value="COMPLETED">COMPLETED</option>
-              </select>
-            </div>
-
-            {/* Delete button */}
-            <button
-              onClick={handleBulkDelete}
-              className="bg-red-500 px-4 py-2 text-white rounded-full text-sm font-bold hover:bg-red-600"
-            >
-              Delete
-            </button>
+          <div className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              checked={selectedTasks.includes(task.id)}
+              onChange={() => handleSelectTask(task.id)}
+              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            />
+            <FaGripVertical className="text-gray-400 cursor-move hover:text-gray-600" />
+            {task.taskStatus === "COMPLETED" ? (
+              <AiFillCheckCircle className="text-green-600 w-5 h-5" />
+            ) : (
+              <AiOutlineCheckCircle className="text-gray-400 w-5 h-5 hover:text-gray-600" />
+            )}
           </div>
-        )}
+        </td>
+
+        <td className="py-3 px-4 text-gray-700 font-medium text-sm">
+          {task.name}
+        </td>
+
+        <td className="py-3 px-4 text-gray-500 text-sm">
+          <span className="inline-block min-w-[100px]">{task.date}</span>
+        </td>
+
+        <td className="py-3 px-4">
+          {task.fileUrl && (
+            <img
+              src={task.fileUrl}
+              alt="Task Preview"
+              className="w-10 h-10 object-cover rounded-md border border-gray-200"
+            />
+          )}
+        </td>
+
+        <td className="py-3 px-4">
+          <select
+            value={task.taskStatus}
+            onChange={(e) => handleUpdateStatus(task.id, e.target.value)}
+            className="px-2 py-0.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-32"
+          >
+            <option value="TO-DO" className="text-gray-500">
+              to-do
+            </option>
+            <option value="IN-PROGRESS" className="text-yellow-600">
+              in-progress
+            </option>
+            <option value="COMPLETED" className="text-green-600">
+              completed
+            </option>
+          </select>
+        </td>
+
+        <td className="py-3 px-4">
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+            {task.taskCategory}
+          </span>
+        </td>
+
+        <td className="py-3 px-4 text-right relative">
+          <BiDotsHorizontalRounded
+            size={24}
+            onClick={() => toggleOptions(task.id)}
+            className="text-gray-400 hover:text-gray-600 cursor-pointer"
+          />
+
+          {showOptions === task.id && (
+            <div className="absolute right-0 z-10 mt-1 w-32 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+              <div className="py-1">
+                <button
+                  onClick={() => handleDeleteTask(task.id)}
+                  className="block w-full px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                >
+                  Delete
+                </button>
+                <button
+                  onClick={() => handleEditTask(task)}
+                  className="block w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  Edit
+                </button>
+              </div>
+            </div>
+          )}
+        </td>
       </tr>
     );
   };
@@ -511,6 +430,93 @@ const Test1 = ({ successMessage }) => {
           ))}
         </div>
       </div>
+      {showPopup && (
+        <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-black text-white border border-gray-600 px-3 py-2 rounded-full w-11/12 max-w-sm shadow-lg flex items-center gap-3">
+          <div className="flex items-center gap-1.5">
+            <h3 className="text-xs font-medium bg-gray-800 px-3 py-1 rounded-full">
+              {selectedTasks.length} Selected
+              <button
+                onClick={() => setSelectedTasks([]) || setShowPopup(false)}
+                className="text-gray-300 hover:text-white text-[10px] pl-1.5"
+              >
+                ✕
+              </button>
+            </h3>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="clearSelection"
+              onChange={(e) => {
+                if (e.target.checked) {
+                  setShowPopup(false) || setSelectedTasks([]); // Clear all selected tasks
+                }
+              }}
+              className="h-4 w-4"
+            />
+          </div>
+
+          {/* Dropdown for status selection */}
+          <div className="flex items-center gap-2">
+            <select
+              id="status"
+              onChange={async (e) => {
+                const newStatus = e.target.value;
+                try {
+                  const token = localStorage.getItem("token");
+                  await Promise.all(
+                    selectedTasks.map((id) =>
+                      axios.put(
+                        `http://localhost:5000/updateTaskStatus/${id}`,
+                        { taskStatus: newStatus },
+                        {
+                          headers: {
+                            Authorization: `Bearer ${token}`,
+                          },
+                        }
+                      )
+                    )
+                  );
+
+                  // Update the tasks state locally
+                  setTasks((prev) =>
+                    prev.map((task) =>
+                      selectedTasks.includes(task.id)
+                        ? { ...task, taskStatus: newStatus }
+                        : task
+                    )
+                  );
+                  setSelectedTasks([]); // Clear selected tasks
+                  setShowPopup(false); // Close the popup
+                } catch (err) {
+                  setError(
+                    err.response?.data?.error ||
+                      err.message ||
+                      "Error updating tasks."
+                  );
+                }
+              }}
+              className="p-2 text-xs bg-black text-white border border-gray-600 rounded-lg appearance-none focus:outline-none"
+            >
+              <option value="" disabled selected>
+                Status
+              </option>
+              <option value="TO-DO">TO-DO</option>
+              <option value="IN-PROGRESS">IN-PROGRESS</option>
+              <option value="COMPLETED">COMPLETED</option>
+            </select>
+          </div>
+
+          {/* Delete button */}
+          <button
+            onClick={handleBulkDelete}
+            className="bg-red-500 px-4 py-2 text-white rounded-full text-sm font-bold hover:bg-red-600"
+          >
+            Delete
+          </button>
+        </div>
+      )}
       {error && (
         <div className="bg-red-100 text-red-800 p-4 mt-4 rounded">{error}</div>
       )}
