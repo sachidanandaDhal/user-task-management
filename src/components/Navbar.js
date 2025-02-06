@@ -11,9 +11,8 @@ import CreateNew from "./CreateNew.js";
 
 import { useNavigate } from "react-router-dom";
 
-const Navbar = () => {
+const Navbar = ({setSuccessMessage}) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
   const [username, setUsername] = useState(null);
@@ -210,7 +209,7 @@ const Navbar = () => {
           </button>
         </div>
       </div>
-      {isModalOpen && <CreateNew closeModal={closeModal} />}
+      {isModalOpen && <CreateNew closeModal={closeModal} setSuccessMessage={setSuccessMessage} />}
     </nav>
   );
 };

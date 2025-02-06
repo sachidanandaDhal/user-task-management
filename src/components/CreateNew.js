@@ -2,7 +2,7 @@
 import React, { useState ,useEffect } from "react";
 import axios from "axios";
 
-const CreateNew =  ({ closeModal, taskData }) => {
+const CreateNew =  ({ closeModal, taskData, setSuccessMessage, }) => {
   const [file, setFile] = useState(null);
   const [filePreview, setFilePreview] = useState(null); // State to hold file preview
   const [formValues, setFormValues] = useState({
@@ -125,14 +125,16 @@ const CreateNew =  ({ closeModal, taskData }) => {
       let response;
       if (taskData) {
         // Editing an existing task (send a PUT request)
-        response = await axios.put(`http://localhost:5000/updateTask/${taskData.id}`, formData, config);
+        response = await axios.put(`http://localhost:5000/updateTask/${taskData.id}`, formData, config);  
       } else {
         // Creating a new task (send a POST request)
         response = await axios.post("http://localhost:5000/saveUserData", formData, config);
+        setSuccessMessage("Okay Sachin! Task created successfully.");
       }
   
       console.log("Response from Backend:", response.data);
       alert(response.data.message);
+      
       closeModal(); // Close the modal after submission
     } catch (error) {
       alert(error.response?.data?.error || "An error occurred while saving data.");

@@ -1,22 +1,20 @@
-import React from 'react';
+import {React, useState } from 'react';
 import Navbar from './Navbar.js';
-import MainContainer from './MainContainer';
+// import MainContainer from './MainContainer';
 import Footer from './Footer';
 import { Route, Routes } from "react-router-dom";
+import TaskManager from './TaskManager';
 
 function Home() {
+  const [successMessage, setSuccessMessage] = useState("");
   return (
     <div className="flex flex-col min-h-screen">
      
-        <Navbar />
+        <Navbar setSuccessMessage={setSuccessMessage}/>
         <main className="flex-grow  p-4">
           <Routes>
             {/* Default route */}
-            <Route path="/" element={<MainContainer />} />
-            {/* Route for About page */}
-            {/* <Route path="/about" element={<About />} /> */}
-            {/* Route for Contact page */}
-            {/* <Route path="/contact" element={<Contact />} /> */}
+            <Route path="/" element={<TaskManager successMessage={successMessage}/>} />
           </Routes>
         </main>
       

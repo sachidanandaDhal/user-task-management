@@ -6,7 +6,7 @@ import { AiOutlineCheckCircle, AiFillCheckCircle } from "react-icons/ai";
 import { BiDotsHorizontalRounded } from "react-icons/bi"; // More options icon
 import CreateNew from "./CreateNew";
 
-const TaskManager = () => {
+const TaskManager = ({successMessage}) => {
   const [tasks, setTasks] = useState([]);
   const [newTask, setNewTask] = useState({
     name: "",
@@ -27,6 +27,8 @@ const TaskManager = () => {
 
   const [editTask, setEditTask] = useState(null); // State to track the task being edited
   const [isEditModalOpen, setIsEditModalOpen] = useState(false); // Track modal visibility
+  const [shouldRefresh, setShouldRefresh] = useState(false);
+  
 
   useEffect(() => {
     const fetchTasks = async () => {
@@ -47,7 +49,13 @@ const TaskManager = () => {
     };
 
     fetchTasks();
-  }, []);
+  }, [shouldRefresh]);
+
+  useEffect(() => {
+    if (successMessage) {
+      setShouldRefresh(prev => !prev); // Toggle refresh state
+    }
+  }, [successMessage]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -191,10 +199,13 @@ const TaskManager = () => {
   const closeModal = () => {
     setIsEditModalOpen(false); // Close the modal
     setEditTask(null); // Reset the task being edited
+    setShouldRefresh(prev => !prev);
   };
+
 
   return (
     <div className="mx-auto">
+    <hr />
       <div className="">
         {/* Column Headers */}
         <table className="min-w-full ">
