@@ -3,7 +3,7 @@ import axios from "axios";
 import { useDrag, useDrop } from "react-dnd";
 import { MdOutlineExpandMore, MdOutlineExpandLess } from "react-icons/md";
 import { FaGripVertical } from "react-icons/fa";
-import { AiOutlineCheckCircle, AiFillCheckCircle } from "react-icons/ai";
+import { AiFillCheckCircle } from "react-icons/ai";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import CreateNew from "./CreateNew";
@@ -200,49 +200,54 @@ const Test1 = ({ successMessage }) => {
       type: ItemType,
       item: { id: task.id, taskStatus: task.taskStatus },
     });
-
+    // Table Under Data
     return (
-      <tr ref={ref} className="border-t cursor-pointer">
-        <td className="py-3 px-4">
-          <div className="flex items-center gap-3">
-            <input
-              type="checkbox"
-              checked={selectedTasks.includes(task.id)}
-              onChange={() => handleSelectTask(task.id)}
-              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-            />
-            <FaGripVertical className="text-gray-400 cursor-move hover:text-gray-600" />
-            {task.taskStatus === "COMPLETED" ? (
-              <AiFillCheckCircle className="text-green-600 w-5 h-5" />
-            ) : (
-              <AiOutlineCheckCircle className="text-gray-400 w-5 h-5 hover:text-gray-600" />
-            )}
-          </div>
-        </td>
+      <tr ref={ref} className="border-t cursor-pointer text-xs ">
+        <td className="py-1 pl-4 w-12">
+  <div className="flex items-center gap-1.5">
+    <input
+      type="checkbox"
+      checked={selectedTasks.includes(task.id)}
+      onChange={() => handleSelectTask(task.id)}
+      className="h-3 w-3 rounded border-gray-300 text-blue-600 focus:ring-0"
+    />
+    <FaGripVertical className="text-gray-400 cursor-move hover:text-gray-600 text-xs" />
+    {task.taskStatus === "COMPLETED" ? (
+      <AiFillCheckCircle className="text-green-600 w-3.5 h-3.5" />
+    ) : (
+      <AiFillCheckCircle className="text-gray-400 w-3.5 h-3.5 hover:text-gray-600" />
+    )}
+  </div>
+</td>
 
-        <td className="py-3 px-4 text-gray-700 font-medium text-sm">
+        <td
+          className={`py-2 px-1 text-gray-700 font-medium max-w-14 truncate whitespace-nowrap overflow-hidden ${
+                              task.taskStatus === "COMPLETED"
+                                ? "line-through text-gray-500"
+                                : ""
+                            }`}
+          title={task.name}
+        >
           {task.name}
         </td>
-
-        <td className="py-3 px-4 text-gray-500 text-sm">
-          <span className="inline-block min-w-[100px]">{task.date}</span>
+        <td className="py-2 px-3 text-gray-500 w-64">
+          <span className="inline-block min-w-[80px]">{task.date}</span>
         </td>
 
-        <td className="py-3 px-4">
+        <td className="py-2 px-3 w-40">
           {task.fileUrl && (
             <img
               src={task.fileUrl}
               alt="Task Preview"
-              className="w-10 h-10 object-cover rounded-md border border-gray-200"
+              className="w-8 h-8 object-cover rounded border border-gray-200"
             />
           )}
         </td>
-
-        <td className="py-3 px-4">
+        <td className="py-3 px-4 w-64">
           <select
             value={task.taskStatus}
             onChange={(e) => handleUpdateStatus(task.id, e.target.value)}
-            className="px-2 py-0.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-32"
+            className="px-2 py-0.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:ring-blue-500 focus:border-blue-500 w-26 appearance-none bg-white"
           >
             <option value="TO-DO" className="text-gray-500">
               to-do
@@ -256,37 +261,40 @@ const Test1 = ({ successMessage }) => {
           </select>
         </td>
 
-        <td className="py-3 px-4">
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+        <td className="py-2 px-3 w-48">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
             {task.taskCategory}
           </span>
         </td>
 
-        <td className="py-3 px-4 text-right relative">
+        <td className="py-2 px-3 text-right relative ">
           <BiDotsHorizontalRounded
-            size={24}
+            size={20}
             onClick={() => toggleOptions(task.id)}
             className="text-gray-400 hover:text-gray-600 cursor-pointer"
           />
 
-          {showOptions === task.id && (
-            <div className="absolute right-0 z-10 mt-1 w-32 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
-              <div className="py-1">
-                <button
-                  onClick={() => handleDeleteTask(task.id)}
-                  className="block w-full px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
-                >
-                  Delete
-                </button>
-                <button
-                  onClick={() => handleEditTask(task)}
-                  className="block w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                >
-                  Edit
-                </button>
-              </div>
-            </div>
-          )}
+{showOptions === task.id && (
+    <div className="absolute right-1 top-0  z-10 w-16 rounded bg-white shadow-lg ring-1 ring-black ring-opacity-5">
+      <div className="py-1">
+        <button
+          onClick={() => handleDeleteTask(task.id)}
+          className="block w-full px-3 py-1 text-xs text-red-600 hover:bg-gray-100"
+        >
+          Delete
+        </button>
+        <button
+          onClick={() => handleEditTask(task)}
+          className="block w-full px-3 py-1 text-xs text-gray-700 hover:bg-gray-100"
+        >
+          Edit
+        </button>
+      </div>
+    </div>
+  )}
+
+
+
         </td>
       </tr>
     );
@@ -323,6 +331,7 @@ const Test1 = ({ successMessage }) => {
               <tr className="">
                 <th className="py-2 px-4 text-left">Name</th>
                 <th className="py-2 px-4 text-left">Due Date</th>
+                <th className="py-2 px-4 text-left">File</th>
                 <th className="py-2 px-4 text-left">Task Status</th>
                 <th className="py-2 px-4 text-left">Task Category</th>
                 <th className="py-2 px-4 text-center">Actions</th>
@@ -339,89 +348,102 @@ const Test1 = ({ successMessage }) => {
                     [status]: !prev[status],
                   }))
                 }
-                className={`flex justify-between items-center text-sm text-black py-2 px-4 rounded-t-lg cursor-pointer ${
-                  status === "TO-DO"
-                    ? "bg-fuchsia-200"
-                    : status === "IN-PROGRESS"
-                    ? "bg-cyan-200"
-                    : "bg-green-200"
-                }`}
+                className={`flex justify-between items-center text-xs text-black py-1.5 px-3 rounded-t-md cursor-pointer 
+                  ${
+                    status === "TO-DO"
+                      ? "bg-fuchsia-200"
+                      : status === "IN-PROGRESS"
+                      ? "bg-cyan-200"
+                      : "bg-green-200"
+                  } hover:opacity-90`}
               >
                 <span>
                   {status} (
                   {tasks.filter((task) => task.taskStatus === status).length})
                 </span>
                 {expandedSections[status] ? (
-                  <MdOutlineExpandLess size={24} />
+                  <MdOutlineExpandLess size={19} />
                 ) : (
-                  <MdOutlineExpandMore size={24} />
+                  <MdOutlineExpandMore size={19} />
                 )}
               </div>
               {expandedSections[status] && (
                 <>
                   {status === "TO-DO" && expandedSections[status] && (
-                    <div className="py-4 ">
+                    <div className="py-2">
                       <button
                         onClick={() => setIsAdding(true)}
-                        className=" text-black px-4"
+                        className="text-black text-xs px-3"
                       >
                         + ADD Task
                       </button>
                     </div>
                   )}
+
                   {status === "TO-DO" && isAdding && (
-                    <div className="py-4">
-                      <div className="flex flex-wrap gap-4 items-center">
+                    <div className="py-2">
+                      <div className="flex flex-wrap gap-2 items-center">
                         <input
                           type="text"
                           name="name"
                           value={newTask.name}
                           onChange={handleInputChange}
-                          placeholder="task name"
-                          className="p-2 border rounded w-64"
+                          placeholder="Task Name"
+                          className="px-2 py-0.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:ring-blue-500 focus:border-blue-500 w-48"
                         />
                         <input
                           type="date"
                           name="date"
                           value={newTask.date}
                           onChange={handleInputChange}
-                          className="p-2 border rounded"
+                          className="px-2 py-0.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:ring-blue-500 focus:border-blue-500 w-30"
                         />
                         <select
                           name="taskStatus"
                           value={newTask.taskStatus}
                           onChange={handleInputChange}
-                          className="p-2 border rounded"
+                          className="px-2 py-0.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:ring-blue-500 focus:border-blue-500 w-26 "
                         >
-                          <option value="TO-DO">to-do</option>
-                          <option value="IN-PROGRESS">in-progress</option>
-                          <option value="COMPLETED">completed</option>
+                          <option value="TO-DO" className="text-gray-500">
+                            to-do
+                          </option>
+                          <option
+                            value="IN-PROGRESS"
+                            className="text-yellow-600"
+                          >
+                            in-progress
+                          </option>
+                          <option value="COMPLETED" className="text-green-600">
+                            completed
+                          </option>
                         </select>
+
                         <select
                           name="taskCategory"
                           value={newTask.taskCategory}
                           onChange={handleInputChange}
-                          className="p-2 border rounded"
+                          className="px-2 py-0.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:ring-blue-500 focus:border-blue-500 w-24"
                         >
-                          <option value="Work">work</option>
-                          <option value="Personal">personal</option>
+                          <option value="Work">Work</option>
+                          <option value="Personal">Personal</option>
                         </select>
                         <button
                           onClick={handleAddTask}
-                          className="bg-purple-500 text-white px-4 py-2 rounded"
+                          className="bg-purple-500 text-white text-xs px-3 py-1 rounded"
                         >
-                          add
+                          Add
                         </button>
                         <button
                           onClick={() => setIsAdding(false)}
-                          className="bg-gray-500 text-white px-4 py-2 rounded"
+                          className="bg-gray-500 text-white text-xs px-3 py-1 rounded"
                         >
-                          cancel
+                          Cancel
                         </button>
                       </div>
                     </div>
                   )}
-                  <table className="min-w-full bg-white rounded-b-lg overflow-hidden shadow-md">
+
+                  <table className="min-w-full bg-white rounded-b-lg overflow-hidden shadow-md text-xs">
                     <DropZone status={status} />
                   </table>
                 </>
@@ -430,6 +452,7 @@ const Test1 = ({ successMessage }) => {
           ))}
         </div>
       </div>
+      {/* Popup for bulk actions when user checked box*/}
       {showPopup && (
         <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-black text-white border border-gray-600 px-3 py-2 rounded-full w-11/12 max-w-sm shadow-lg flex items-center gap-3">
           <div className="flex items-center gap-1.5">
@@ -457,7 +480,7 @@ const Test1 = ({ successMessage }) => {
             />
           </div>
 
-          {/* Dropdown for status selection */}
+          {/* Dropdown for status selection when user click to cheack box */}
           <div className="flex items-center gap-2">
             <select
               id="status"
@@ -517,6 +540,8 @@ const Test1 = ({ successMessage }) => {
           </button>
         </div>
       )}
+
+
       {error && (
         <div className="bg-red-100 text-red-800 p-4 mt-4 rounded">{error}</div>
       )}
