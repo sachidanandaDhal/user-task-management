@@ -221,7 +221,7 @@ const Test1 = ({ successMessage }) => {
 </td>
 
         <td
-          className={`py-2 px-1 text-gray-700 font-medium max-w-14 truncate whitespace-nowrap overflow-hidden ${
+          className={`py-2 px-1 text-gray-700 font-medium max-w-14 min-w-14 truncate whitespace-nowrap overflow-hidden ${
                               task.taskStatus === "COMPLETED"
                                 ? "line-through text-gray-500"
                                 : ""
