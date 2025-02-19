@@ -31,7 +31,8 @@ const Navbar = ({ setSearchQuery, setSuccessMessage , setSelectedCategory }) => 
   };
   
   const handleClear = () => {
-    setSearchQuery("");
+    setLocalSearchQuery("");  // ✅ Clear input field
+    setSearchQuery(""); // ✅ Clear parent state
   };
 
   useEffect(() => {
