@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useDrag, useDrop, DndProvider } from "react-dnd";
@@ -89,18 +88,38 @@ const Board = ({ successMessage, searchQuery }) => {
     });
 
     return (
-      <div ref={ref} className="bg-white shadow-md rounded-lg p-4 mb-3 relative cursor-pointer">
-        <p className="font-semibold truncate" title={task.name}>{task.name}</p>
-        <p className="text-xs text-gray-500">{task.taskCategory} - {task.date}</p>
+      <div
+        ref={ref}
+        className="bg-white shadow-md rounded-lg p-4 mb-2 relative cursor-pointer"
+      >
+        <p className="font-semibold truncate text-xs mb-2" title={task.name}>
+          {task.name}
+        </p>
+        <div className="flex justify-between text-xs text-gray-500">
+          <p>{task.taskCategory}</p>
+          <p>{task.date}</p>
+        </div>
         <BiDotsHorizontalRounded
           size={20}
-          onClick={() => setShowOptions(task.id === showOptions ? null : task.id)}
+          onClick={() =>
+            setShowOptions(task.id === showOptions ? null : task.id)
+          }
           className="absolute top-2 right-2 text-gray-500 cursor-pointer hover:text-black"
         />
         {showOptions === task.id && (
           <div className="absolute right-2 top-8 bg-white shadow-lg rounded-lg w-24 z-10">
-            <button onClick={() => handleEditTask(task)} className="block w-full px-3 py-1 text-sm text-gray-700 hover:bg-gray-100">Edit</button>
-            <button onClick={() => handleDeleteTask(task.id)} className="block w-full px-3 py-1 text-sm text-red-600 hover:bg-gray-100">Delete</button>
+            <button
+              onClick={() => handleEditTask(task)}
+              className="block w-full px-3 py-1 text-sm text-gray-700 hover:bg-gray-100"
+            >
+              Edit
+            </button>
+            <button
+              onClick={() => handleDeleteTask(task.id)}
+              className="block w-full px-3 py-1 text-sm text-red-600 hover:bg-gray-100"
+            >
+              Delete
+            </button>
           </div>
         )}
       </div>
@@ -119,7 +138,6 @@ const Board = ({ successMessage, searchQuery }) => {
         task.taskStatus === status &&
         task.name.toLowerCase().includes(searchQuery.toLowerCase()) // ✅ Filtering properly
     );
-    
 
     return (
       <div ref={drop} className="min-h-[50px] p-4">
@@ -127,7 +145,8 @@ const Board = ({ successMessage, searchQuery }) => {
           filteredTasks.map((task) => <Task key={task.id} task={task} />)
         ) : (
           <div className="text-center text-gray-500 italic">
-            No tasks {searchQuery ? "matching search" : `in ${status.toLowerCase()}`}.
+            No tasks{" "}
+            {searchQuery ? "matching search" : `in ${status.toLowerCase()}`}.
           </div>
         )}
       </div>
@@ -136,13 +155,16 @@ const Board = ({ successMessage, searchQuery }) => {
 
   return (
     <DndProvider backend={HTML5Backend}>
-      <div className="grid grid-cols-3 gap-4 p-6">
+      <div className="grid grid-cols-3 gap-4 text-xs">
         {["TO-DO", "IN-PROGRESS", "COMPLETED"].map((status) => (
           <div key={status} className="bg-gray-100 rounded-lg shadow-md">
             <div
               className={`flex justify-between items-center p-3 rounded-t-lg cursor-pointer ${
-                status === "TO-DO" ? "bg-purple-300" :
-                status === "IN-PROGRESS" ? "bg-blue-300" : "bg-green-300"
+                status === "TO-DO"
+                  ? "bg-fuchsia-200"
+                  : status === "IN-PROGRESS"
+                  ? "bg-cyan-200"
+                  : "bg-green-200"
               }`}
               onClick={() =>
                 setExpandedSections((prev) => ({
@@ -152,7 +174,8 @@ const Board = ({ successMessage, searchQuery }) => {
               }
             >
               <span className="font-semibold">
-                {status} ({tasks.filter((task) => task.taskStatus === status).length})
+                {status} (
+                {tasks.filter((task) => task.taskStatus === status).length})
               </span>
               {expandedSections[status] ? (
                 <MdOutlineExpandLess size={20} />
@@ -164,7 +187,9 @@ const Board = ({ successMessage, searchQuery }) => {
           </div>
         ))}
       </div>
-      {isEditModalOpen && <CreateNew closeModal={closeModal} taskData={editTask} />}
+      {isEditModalOpen && (
+        <CreateNew closeModal={closeModal} taskData={editTask} />
+      )}
     </DndProvider>
   );
 };
