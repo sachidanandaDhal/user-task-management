@@ -9,20 +9,28 @@ import { BiSearch, BiX } from "react-icons/bi";
 import logo from "../assets/car1.jpg";
 import CreateNew from "./CreateNew.js";
 
-import { useNavigate } from "react-router-dom";
+import { useNavigate ,useLocation } from "react-router-dom";
 
-const Navbar = ({setSuccessMessage}) => {
+const Navbar = ({ setSearchQuery, setSuccessMessage}) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
   const [username, setUsername] = useState(null);
   const navigate = useNavigate();
+  const location = useLocation();
 
-  const [searchValue, setSearchValue] = useState(""); // State for input value
 
-  const handleClear = () => {
-    setSearchValue("");
+  const [localSearchQuery, setLocalSearchQuery] = useState(""); // State for input value
+
+  const handleSearchChange = (e) => {
+    setLocalSearchQuery(e.target.value);
+    setSearchQuery(e.target.value); // 🟢 Update search in parent
   };
+  
+  const handleClear = () => {
+    setSearchQuery("");
+  };
+
   useEffect(() => {
     // Retrieve the username from local storage or decode from the token
     const token = localStorage.getItem("token");
@@ -39,11 +47,11 @@ const Navbar = ({setSuccessMessage}) => {
     console.log("Signed out");
   };
 
-  const [activeView, setActiveView] = useState("List"); // State to track the active view
-
   const handleViewChange = (view) => {
-    setActiveView(view);
+    navigate(view === "List" ? "/home" : "/home/board");
   };
+  
+  
 
   return (
     <nav className="bg-white p-4 flex flex-col space-y-2">
@@ -63,28 +71,27 @@ const Navbar = ({setSuccessMessage}) => {
       <div className="flex items-center justify-between">
         {/* View Toggle Buttons */}
         <div className="flex space-x-4">
-          <button
-            className={`flex items-center space-x-2 font-medium ${
-              activeView === "List"
-                ? "text-gray-700 border-b-2 border-black"
-                : "text-gray-600 hover:text-black"
-            }`}
-            onClick={() => handleViewChange("List")}
-          >
-            <MdViewList className="text-xl" />
-            <span>List</span>
-          </button>
-          <button
-            className={`flex items-center space-x-2 font-medium ${
-              activeView === "Board"
-                ? "text-gray-700 border-b-2 border-black"
-                : "text-gray-600 hover:text-black"
-            }`}
-            onClick={() => handleViewChange("Board")}
-          >
-            <CiViewBoard className="text-xl" />
-            <span>Board</span>
-          </button>
+        <button
+  className={`flex items-center space-x-2 font-medium ${
+    location.pathname === "/home" ? "text-gray-700 border-b-2 border-black" : "text-gray-600 hover:text-black"
+  }`}
+  onClick={() => handleViewChange("List")}
+>
+  <MdViewList className="text-xl" />
+  <span>List</span>
+</button>
+
+<button
+  className={`flex items-center space-x-2 font-medium ${
+    location.pathname === "/home/board" ? "text-gray-700 border-b-2 border-black" : "text-gray-600 hover:text-black"
+  }`}
+  onClick={() => handleViewChange("Board")}
+>
+  <CiViewBoard className="text-xl" />
+  <span>Board</span>
+</button>
+
+
         </div>
 
         {/* Logout Button */}
@@ -179,28 +186,20 @@ const Navbar = ({setSuccessMessage}) => {
         <div className="flex items-center space-x-4">
           {/* Search Input */}
           <div className="relative">
-            <div className="relative flex items-center">
-              {/* Left Search Icon */}
-              <BiSearch className="absolute left-3 text-gray-400 w-5 h-5" />
-
-              {/* Input Field */}
-              <input
-                type="text"
-                value={searchValue}
-                onChange={(e) => setSearchValue(e.target.value)}
-                placeholder="Search"
-                className="pl-10 pr-10 border text-sm border-gray-300 rounded-full px-4 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-600"
-              />
-
-              {/* Clear (X) Icon */}
-              {searchValue && (
-                <BiX
-                  className="absolute right-3 text-gray-400 w-5 h-5 cursor-pointer hover:text-gray-600"
-                  onClick={handleClear}
-                />
-              )}
-            </div>
-          </div>
+  <div className="relative flex items-center">
+    <BiSearch className="absolute left-3 text-gray-400 w-5 h-5" />
+    <input
+      type="text"
+      value={localSearchQuery}
+      onChange={handleSearchChange}
+      placeholder="Search"
+      className="pl-10 pr-10 border text-sm border-gray-300 rounded-full px-4 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-600"
+    />
+    {localSearchQuery&& (
+      <BiX className="absolute right-3 text-gray-400 w-5 h-5 cursor-pointer hover:text-gray-600" onClick={handleClear} />
+    )}
+  </div>
+</div>
           <button
             className="px-4 py-2 text-sm bg-purple-600 text-white rounded-full hover:bg-purple-700"
             onClick={openModal}

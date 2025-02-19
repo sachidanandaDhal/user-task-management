@@ -11,7 +11,7 @@ import { BiDotsHorizontalRounded } from "react-icons/bi"; // More options icon
 
 const ItemType = "TASK";
 
-const Test1 = ({ successMessage }) => {
+const Test1 = ({ successMessage , searchQuery }) => {
   const [tasks, setTasks] = useState([]);
   const [newTask, setNewTask] = useState({
     name: "",
@@ -305,7 +305,12 @@ const Test1 = ({ successMessage }) => {
       accept: ItemType,
       drop: (item) => handleUpdateStatus(item.id, status),
     });
-    const filteredTasks = tasks.filter((task) => task.taskStatus === status);
+    // **Filter tasks based on status AND searchQuery**
+    const filteredTasks = tasks.filter(
+      (task) =>
+        task.taskStatus === status &&
+        task.name.toLowerCase().includes(searchQuery.toLowerCase()) // ✅ Filtering properly
+    );
     return (
       <tbody ref={drop} className="min-h-[50px]">
         {filteredTasks.length > 0 ? (
@@ -313,7 +318,7 @@ const Test1 = ({ successMessage }) => {
         ) : (
           <tr>
             <td colSpan="5" className="text-center py-4">
-              No tasks in this category.
+            No tasks {searchQuery ? "matching search" : `in ${status.toLowerCase()}`}.
             </td>
           </tr>
         )}
