@@ -8,7 +8,7 @@ import CreateNew from "./CreateNew";
 
 const ItemType = "TASK";
 
-const Board = ({ successMessage, searchQuery }) => {
+const Board = ({ successMessage, searchQuery, selectedCategory }) => {
   const [tasks, setTasks] = useState([]);
   const [expandedSections, setExpandedSections] = useState({
     "TO-DO": true,
@@ -132,24 +132,30 @@ const Board = ({ successMessage, searchQuery }) => {
       drop: (item) => handleUpdateStatus(item.id, status),
     });
 
-    // **Filter tasks based on status AND searchQuery**
-    const filteredTasks = tasks.filter(
-      (task) =>
-        task.taskStatus === status &&
-        task.name.toLowerCase().includes(searchQuery.toLowerCase()) // ✅ Filtering properly
-    );
+     // ✅ Filter by status, searchQuery, and selectedCategory
+  const filteredTasks = tasks.filter(
+    (task) =>
+      task.taskStatus === status &&
+      task.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
+      (!selectedCategory || task.taskCategory === selectedCategory) // ✅ Filter by category
+  );
 
-    return (
-      <div ref={drop} className="min-h-[50px] p-4">
-        {filteredTasks.length > 0 ? (
-          filteredTasks.map((task) => <Task key={task.id} task={task} />)
-        ) : (
-          <div className="text-center text-gray-500 italic">
-            No tasks{" "}
-            {searchQuery ? "matching search" : `in ${status.toLowerCase()}`}.
-          </div>
-        )}
-      </div>
+  return (
+    <div ref={drop} className="min-h-[50px] p-4">
+      {filteredTasks.length > 0 ? (
+        filteredTasks.map((task) => <Task key={task.id} task={task} />)
+      ) : (
+        <div className="text-center text-gray-500 italic">
+          No tasks{" "}
+          {searchQuery
+            ? "matching search"
+            : selectedCategory
+            ? `in ${selectedCategory}`
+            : `in ${status.toLowerCase()}`}{" "}
+          .
+        </div>
+      )}
+    </div>
     );
   };
 

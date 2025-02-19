@@ -6,12 +6,12 @@ import { CiViewBoard } from "react-icons/ci";
 import { ChevronDownIcon } from "@heroicons/react/20/solid";
 import { BiLogOut } from "react-icons/bi";
 import { BiSearch, BiX } from "react-icons/bi";
-import logo from "../assets/car1.jpg";
+import logo from "../assets/bubu.jpeg";
 import CreateNew from "./CreateNew.js";
 
-import { useNavigate ,useLocation } from "react-router-dom";
+import { useNavigate ,useLocation} from "react-router-dom";
 
-const Navbar = ({ setSearchQuery, setSuccessMessage}) => {
+const Navbar = ({ setSearchQuery, setSuccessMessage , setSelectedCategory }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
@@ -25,6 +25,9 @@ const Navbar = ({ setSearchQuery, setSuccessMessage}) => {
   const handleSearchChange = (e) => {
     setLocalSearchQuery(e.target.value);
     setSearchQuery(e.target.value); // 🟢 Update search in parent
+  };
+  const handleCategorySelect = (category) => {
+    setSelectedCategory(category); // ✅ Updates selectedCategory in Home.js
   };
   
   const handleClear = () => {
@@ -63,7 +66,7 @@ const Navbar = ({ setSearchQuery, setSuccessMessage}) => {
         </h1>
         <div className="flex items-center space-x-3">
           <img src={logo} alt="User Avatar" className="w-8 h-8 rounded-full" />
-          <span> {username ? `Hi, ${username}` : "Account"}</span>
+          <span> {username ? ` ${username}` : "Account"}</span>
         </div>
       </div>
 
@@ -120,29 +123,44 @@ const Navbar = ({ setSearchQuery, setSuccessMessage}) => {
             </MenuButton>
 
             <MenuItems className="absolute right-0 z-10 mt-2 w-40 origin-top-right rounded-md bg-white ring-1 shadow-lg ring-black/5 focus:outline-none">
-              <MenuItem>
-                {({ active }) => (
-                  <button
-                    className={`block w-full px-4 py-2 text-left text-sm ${
-                      active ? "bg-gray-100 text-gray-900" : "text-gray-700"
-                    }`}
-                  >
-                    Work
-                  </button>
-                )}
-              </MenuItem>
-              <MenuItem>
-                {({ active }) => (
-                  <button
-                    className={`block w-full px-4 py-2 text-left text-sm ${
-                      active ? "bg-gray-100 text-gray-900" : "text-gray-700"
-                    }`}
-                  >
-                    Personal
-                  </button>
-                )}
-              </MenuItem>
-            </MenuItems>
+      <MenuItem>
+        {({ active }) => (
+          <button
+            className={`block w-full px-4 py-2 text-left text-sm ${
+              active ? "bg-gray-100 text-gray-900" : "text-gray-700"
+            }`}
+            onClick={() => handleCategorySelect("WORK")}
+          >
+            WORK
+          </button>
+        )}
+      </MenuItem>
+      <MenuItem>
+        {({ active }) => (
+          <button
+            className={`block w-full px-4 py-2 text-left text-sm ${
+              active ? "bg-gray-100 text-gray-900" : "text-gray-700"
+            }`}
+            onClick={() => handleCategorySelect("PERSONAL")}
+          >
+            PERSONAL
+          </button>
+        )}
+      </MenuItem>
+      {/* ✅ Reset Option */}
+      <MenuItem>
+        {({ active }) => (
+          <button
+            className={`block w-full px-4 py-2 text-left text-sm font-semibold ${
+              active ? "bg-gray-100 text-red-600" : "text-red-500"
+            }`}
+            onClick={() => handleCategorySelect(null)} // Reset to show all tasks
+          >
+            Reset
+          </button>
+        )}
+      </MenuItem>
+    </MenuItems>
           </Menu>
 
           {/* Due Date Filter */}
