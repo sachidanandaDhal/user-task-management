@@ -92,7 +92,7 @@ const Board = ({ successMessage, searchQuery }) => {
         ref={ref}
         className="bg-white shadow-md rounded-lg p-4 mb-2 relative cursor-pointer"
       >
-        <p className="font-semibold truncate text-xs mb-2" title={task.name}>
+        <p className="font-semibold truncate text-sm mb-6" title={task.name}>
           {task.name}
         </p>
         <div className="flex justify-between text-xs text-gray-500">

@@ -121,7 +121,7 @@ const Test1 = ({ successMessage , searchQuery }) => {
         name: "",
         date: "",
         taskStatus: "TO-DO",
-        taskCategory: "Work",
+        taskCategory: "WORK",
       });
       setIsAdding(false);
       if (response.data.success) {
@@ -429,8 +429,8 @@ const Test1 = ({ successMessage , searchQuery }) => {
                           onChange={handleInputChange}
                           className="px-2 py-0.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-0 focus:ring-blue-500 focus:border-blue-500 w-24"
                         >
-                          <option value="Work">Work</option>
-                          <option value="Personal">Personal</option>
+                          <option value="WORK">WORK</option>
+                          <option value="PERSONAL">PERSONAL</option>
                         </select>
                         <button
                           onClick={handleAddTask}
