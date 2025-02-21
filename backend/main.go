@@ -10,7 +10,7 @@ import (
 	"net/http"
 	"os"
 	"time"
-
+    "github.com/joho/godotenv"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -26,10 +26,18 @@ var Client *mongo.Client
 
 // Initialize MongoDB Connection
 func InitMongoDB() {
-	var err error
-	Client, err = mongo.NewClient(options.Client().ApplyURI("mongodb://localhost:27017"))
+	// ✅ Load .env file
+	err := godotenv.Load()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Error loading .env file")
+	}
+
+	mongoURI := os.Getenv("MONGO_URI")
+	fmt.Println("Mongo URI:", mongoURI) // ✅ Debugging
+
+	Client, err = mongo.NewClient(options.Client().ApplyURI(mongoURI))
+	if err != nil {
+		log.Fatal("MongoDB Client Error:", err)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -37,8 +45,9 @@ func InitMongoDB() {
 
 	err = Client.Connect(ctx)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("MongoDB Connection Error:", err)
 	}
+	fmt.Println("✅ MongoDB Connected Successfully")
 }
 
 // User model
