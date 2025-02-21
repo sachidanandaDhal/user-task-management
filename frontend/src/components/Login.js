@@ -1,16 +1,38 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+
+const API_URL = process.env.REACT_APP_API_URL; // ✅ Define API_URL globally
 
 const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
 
+  // ✅ Fetch tasks (Optional, remove if not needed)
+  const fetchTasks = async () => {
+    try {
+      const response = await fetch(`${API_URL}/getTask`);
+      if (response.ok) {
+        const data = await response.json();
+        console.log("Tasks:", data);
+      } else {
+        console.error("Failed to fetch tasks");
+      }
+    } catch (error) {
+      console.error("Error fetching tasks:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchTasks();
+  }, []); // ✅ No dependencies needed
+
+  // ✅ Handle login submission
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     try {
-      const response = await fetch('http://localhost:5000/login', {
+      const response = await fetch(`${API_URL}/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
@@ -31,6 +53,7 @@ const Login = () => {
     }
   };
 
+  // ✅ Navigate to register page
   const handleRegister = () => {
     navigate('/register');
   };

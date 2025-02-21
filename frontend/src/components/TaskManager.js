@@ -33,6 +33,7 @@ const TaskManager = ({ successMessage, searchQuery, selectedCategory }) => {
   const [editTask, setEditTask] = useState(null); // State to track the task being edited
   const [isEditModalOpen, setIsEditModalOpen] = useState(false); // Track modal visibility
   const [shouldRefresh, setShouldRefresh] = useState(false);
+  const API_URL = process.env.REACT_APP_API_URL;
 
   useEffect(() => {
     const fetchTasks = async () => {
@@ -40,7 +41,7 @@ const TaskManager = ({ successMessage, searchQuery, selectedCategory }) => {
         const token = localStorage.getItem("token");
         if (!token) throw new Error("Token not found. Please log in again.");
 
-        const response = await axios.get("http://localhost:5000/getTask", {
+        const response = await axios.get(`${API_URL}/getTask`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -52,8 +53,10 @@ const TaskManager = ({ successMessage, searchQuery, selectedCategory }) => {
       }
     };
 
-    fetchTasks();
-  }, [shouldRefresh]);
+    if (API_URL) { // ✅ Ensure API_URL is defined before calling fetchTasks
+      fetchTasks();
+    }
+  }, [shouldRefresh, API_URL]);
 
   useEffect(() => {
     if (successMessage) {
@@ -65,7 +68,7 @@ const TaskManager = ({ successMessage, searchQuery, selectedCategory }) => {
     try {
       const token = localStorage.getItem("token");
       await axios.put(
-        `http://localhost:5000/updateTaskStatus/${id}`,
+        `${API_URL}/updateTaskStatus/${id}`,
         { taskStatus: newStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -106,7 +109,7 @@ const TaskManager = ({ successMessage, searchQuery, selectedCategory }) => {
     try {
       const token = localStorage.getItem("token"); // Assuming token is stored in local storage
       const response = await axios.post(
-        "http://localhost:5000/saveUserData",
+        `${API_URL}/saveUserData`,
         formData,
         {
           headers: {
@@ -137,7 +140,7 @@ const TaskManager = ({ successMessage, searchQuery, selectedCategory }) => {
   const handleDeleteTask = async (id) => {
     try {
       const token = localStorage.getItem("token");
-      await axios.delete(`http://localhost:5000/deleteTask/${id}`, {
+      await axios.delete(`${API_URL}/deleteTask/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -161,7 +164,7 @@ const TaskManager = ({ successMessage, searchQuery, selectedCategory }) => {
       const token = localStorage.getItem("token");
       await Promise.all(
         selectedTasks.map((id) =>
-          axios.delete(`http://localhost:5000/deleteTask/${id}`, {
+          axios.delete(`${API_URL}/deleteTask/${id}`, {
             headers: { Authorization: `Bearer ${token}` },
           })
         )
@@ -499,7 +502,7 @@ const TaskManager = ({ successMessage, searchQuery, selectedCategory }) => {
                   await Promise.all(
                     selectedTasks.map((id) =>
                       axios.put(
-                        `http://localhost:5000/updateTaskStatus/${id}`,
+                        `${API_URL}/updateTaskStatus/${id}`,
                         { taskStatus: newStatus },
                         {
                           headers: {

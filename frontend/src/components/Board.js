@@ -9,6 +9,7 @@ import CreateNew from "./CreateNew";
 const ItemType = "TASK";
 
 const Board = ({ successMessage, searchQuery, selectedCategory }) => {
+  const API_URL = process.env.REACT_APP_API_URL;
   const [tasks, setTasks] = useState([]);
   const [expandedSections, setExpandedSections] = useState({
     "TO-DO": true,
@@ -26,7 +27,7 @@ const Board = ({ successMessage, searchQuery, selectedCategory }) => {
         const token = localStorage.getItem("token");
         if (!token) throw new Error("Token not found. Please log in again.");
 
-        const response = await axios.get("http://localhost:5000/getTask", {
+        const response = await axios.get(`${API_URL}/getTask`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -35,8 +36,10 @@ const Board = ({ successMessage, searchQuery, selectedCategory }) => {
         console.error("Error fetching tasks:", err);
       }
     };
-    fetchTasks();
-  }, [shouldRefresh]);
+    if (API_URL) { // ✅ Ensure API_URL is defined before calling fetchTasks
+      fetchTasks();
+    }
+  }, [shouldRefresh, API_URL]);
 
   useEffect(() => {
     if (successMessage) {
@@ -48,7 +51,7 @@ const Board = ({ successMessage, searchQuery, selectedCategory }) => {
     try {
       const token = localStorage.getItem("token");
       await axios.put(
-        `http://localhost:5000/updateTaskStatus/${id}`,
+        `${API_URL}/updateTaskStatus/${id}`,
         { taskStatus: newStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -61,7 +64,7 @@ const Board = ({ successMessage, searchQuery, selectedCategory }) => {
   const handleDeleteTask = async (id) => {
     try {
       const token = localStorage.getItem("token");
-      await axios.delete(`http://localhost:5000/deleteTask/${id}`, {
+      await axios.delete(`${API_URL}/deleteTask/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setShouldRefresh((prev) => !prev);

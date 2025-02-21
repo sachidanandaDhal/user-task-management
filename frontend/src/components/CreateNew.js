@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 const CreateNew = ({ closeModal, taskData, setSuccessMessage }) => {
+  const API_URL = process.env.REACT_APP_API_URL;
   const [file, setFile] = useState(null);
   const [filePreview, setFilePreview] = useState(null);
   const [formValues, setFormValues] = useState({
@@ -68,9 +69,9 @@ const CreateNew = ({ closeModal, taskData, setSuccessMessage }) => {
         },
       };
       if (taskData) {
-        await axios.put(`http://localhost:5000/updateTask/${taskData.id}`, formData, config);
+        await axios.put(`${API_URL}/updateTask/${taskData.id}`, formData, config);
       } else {
-        await axios.post("http://localhost:5000/saveUserData", formData, config);
+        await axios.post(`${API_URL}/saveUserData`, formData, config);
         setSuccessMessage("Task created successfully!");
       }
       alert("Task created successfully!");
