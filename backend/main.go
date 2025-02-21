@@ -10,10 +10,11 @@ import (
 	"net/http"
 	"os"
 	"time"
-    "github.com/joho/godotenv"
+
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -82,6 +83,11 @@ func main() {
 		MaxAge:           12 * time.Hour,
 	}))
 
+	// ✅ Default route for testing
+	r.GET("/", func(c *gin.Context) {
+		c.JSON(200, gin.H{"message": "✅ Backend is running on Render!"})
+	})
+
 	// Routes
 	r.POST("/register", Register)
 	r.POST("/login", Login)
@@ -92,7 +98,15 @@ func main() {
 	r.PUT("/updateTaskStatus/:id", UpdateTaskStatus)
 	r.PUT("/updateTask/:id", UpdateTask)
 
-	if err := r.Run(":5000"); err != nil {
+	// ✅ Read PORT from Environment (Fix Render Deployment)
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "5000" // Default port for local testing
+	}
+
+	log.Println("✅ Server running on port:", port)
+
+	if err := r.Run(":" + port); err != nil {
 		log.Fatal("Server run failed:", err)
 	}
 }
